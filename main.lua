@@ -15,23 +15,25 @@ tween = require "tween"
 require "camera"
 timer = require "timer"
 touch = require "touch"
+ui = require "ui"
 
 
 function love.load()
 
-
+	local a = ui.new()
+	local t = a:add("text",{text="Test",font=ui.font(25)})
 
 end
 
 function love.update( dt )
 
-
+	ui.update( dt )
 
 end
 
 function love.draw()
 
-
+	ui.draw()
 
 end
 

@@ -5,6 +5,7 @@ local ui = {
 	fonts = { }, --for containing all UI made fonts
 }
 
+
 ui.elements = {}
 for i, v in pairs( love.filesystem.getDirectoryItems(ui.path.."/elem") ) do
 	ui.elements[v:sub(1,-5)] = require(ui.path.."/elem/"..v:sub(1,-5))
@@ -23,6 +24,20 @@ function ui.font(size)
 		ui.fonts[size] = love.graphics.newFont(size)
 	end
 	return ui.fonts[size]
+end
+
+function ui.lighten(r,g,b,amt)
+	local r = math.clamp(0,r+amt,255)
+	local g = math.clamp(0,g+amt,255)
+	local b = math.clamp(0,b+amt,255)
+	return r,g,b
+end
+
+function ui.darken(r,g,b,amt)
+	local r = math.clamp(0,r-amt,255)
+	local g = math.clamp(0,g-amt,255)
+	local b = math.clamp(0,b-amt,255)
+	return r,g,b
 end
 
 function ui.getAbsX(obj)
@@ -60,5 +75,16 @@ function ui.draw()
 	end
 end
 
+function ui.mousepressed( x, y, button )
+	for i, v in pairs( ui.roots ) do
+		if v.mousepressed then v:mousepressed(x, y, button) end
+	end
+end
+
+function ui.mousereleased( x, y, button )
+	for i, v in pairs( ui.roots ) do
+		if v.mousereleased then v:mousereleased( x, y, button ) end
+	end
+end
 
 return ui

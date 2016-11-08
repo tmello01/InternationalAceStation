@@ -58,4 +58,28 @@ function panel:draw()
 	end
 end
 
+function panel:mousepressed( x, y, button )
+
+	if ui.checkState(self) then
+		local ax, ay = ui.getAbsX(self),ui.getAbsY(self)
+		if x >= ax and x <= ax + self.w and y >= ay and y <= ay + self.h then
+			for i, v in pairs( self.children ) do
+				if v.mousepressed then v:mousepressed( x,y,button ) end
+			end
+		end
+	end
+
+end
+function panel:mousereleased( x, y, button )
+
+	if ui.checkState(self) then
+		local ax, ay = ui.getAbsX(self),ui.getAbsY(self)
+		if x >= ax and x <= ax + self.w and y >= ay and y <= ay + self.h then
+			for i, v in pairs( self.children ) do
+				if v.mousereleased then v:mousereleased( x,y,button ) end
+			end
+		end
+	end
+
+end
 return panel

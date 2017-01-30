@@ -12,7 +12,7 @@ end
 
 
 
-	touches is a container for all active touch objects.
+	**touches** is a container for all active touch objects.
 
 ]=]--
 
@@ -20,7 +20,6 @@ local t = {
 	id = 0,
 	x = 0,
 	y = 0,
-	timer = timer:new(1.5),
 }
 t.__index = t
 local touches = { }
@@ -29,8 +28,13 @@ local public = { }
 function t:new( id, x, y )
 	local data = {id=id,x=x,y=y}
 	local self = setmetatable(data,t)
-	self.timer.oncomplete = function()
-
+	
+	for i, v in pairs( Game.Objects ) do
+		for k, z in pairs( v ) do
+			if x >= z.x and x <= z.x + z.w and y >= z.y and y <= z.y + z.h then
+				touchmanager.start( z, id )
+			end
+		end
 	end
 	table.insert( touches, self )
 	return self
@@ -41,6 +45,11 @@ function t:update( dt )
 end
 
 function t:updatePosition( x, y )
+	if self.x ~= x or self.y ~= y then
+		if touchmanager.hasId( self.id ) then
+			touchmanager.drag( self.id )
+		end
+	end
 	self.x = x or self.x
 	self.y = y or self.y
 end
@@ -48,6 +57,7 @@ end
 function t:remove()
 	for i, v in pairs( touches ) do
 		if v == self then
+			touchmanager.remove( self.id )
 			touches[i] = nil
 			v = nil
 			self = nil
@@ -64,10 +74,11 @@ function public.new(id,x,y)
 	return t:new(id,x,y)
 end
 
-function public.updatePositions(id,x,y)
+function public.updatePosition(id,x,y)
 	for i, v in pairs( touches ) do
 		if v.id == id then
 			v:updatePosition(x,y)
+			--print( x, y )
 		end
 	end
 end
@@ -78,6 +89,15 @@ function public.remove(id,x,y)
 			v:remove()
 		end
 	end
+end
+
+function public.hasTouch(id)
+	for i, v in pairs( touches ) do
+		if v.id == id then
+			return true
+		end
+	end
+	return false
 end
 
 return public

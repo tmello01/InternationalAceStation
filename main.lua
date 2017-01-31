@@ -33,6 +33,8 @@ touchmanager = require "touchmanager"
 
 local Windows = love.system.getOS() == "Windows"
 
+--Creates table for server information, to be used by servercreate.lua
+
 
 Tileset = love.graphics.newImage("assets/images/cards.png")
 Tileset:setFilter("nearest", "nearest")
@@ -99,9 +101,31 @@ function math.clamp(low, n, high) return math.min(math.max(n, low), high) end
 function love.load()
 
 	newcard = card:new()
+	
+	--Tyler's Stuff....shh...don't touch :)
+	text = "Please enter your name!"
+
+	love.keyboard.setKeyRepeat(true)
 
 end
 
+function love.textinput(t)
+	text = text .. t
+	if key == "enter" then
+		text = nil
+	end
+end
+
+function love.keypressed(key)
+    if key == "backspace" then
+        local byteoffset = utf8.offset(text, -1)
+ 
+        if byteoffset then
+            text = string.sub(text, 1, byteoffset - 1)
+        end
+    end
+end
+--Tyler's stuff ends here so fuck with whatever you want
 function love.update( dt )
 
 	ui.update( dt )
@@ -114,14 +138,17 @@ function love.update( dt )
 	end
 
 end
-
 function love.draw()
 
 	ui.draw()
-	
+	local fuckary = 0
 	--Draw cards--
 	love.graphics.draw( Game.Spritebatch )
-
+	--WAIT! Also Tyler's thing. Not really needed, but would be appreciated if not fucked with. Thanks! ~Tyler
+	if fuckary<5 then
+		love.graphics.printf(text, 0, 0, love.graphics.getWidth())
+		fuckary = fuckary + 1
+	end
 end
 
 

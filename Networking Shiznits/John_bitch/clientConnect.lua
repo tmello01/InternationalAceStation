@@ -8,7 +8,7 @@ function connectToServer()
 	end)
 
 	client:on("disconnect", function(data)
-        print("Client disconnected from the server.")
+        print(yourname .. " has disconnected from the server.")
     end)
 
     client:connect()

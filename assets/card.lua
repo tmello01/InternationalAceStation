@@ -35,7 +35,7 @@ local card = {
 		return self.x, self.y
 	end,
 	onHold = function( self )
-		for _, Group in pairs( Game.Objects ) do
+		for GroupName, Group in pairs( Game.Objects ) do
 			for i, v in pairs( Group ) do
 				if v ~= self then
 					if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
@@ -46,12 +46,14 @@ local card = {
 							[1] = {
 								suit = self.suit,
 								value = self.value,
+								flipped = self.flipped,
 							},
 						}
 						if v.type == "card" then
 							cards[2] = {
 								suit = v.suit,
 								value = v.value,
+								flipped = v.flipped
 							}
 						else
 							for i, v in pairs( v.cards ) do
@@ -61,8 +63,11 @@ local card = {
 						deck:new({
 							x = avgx,
 							y = avgy,
-							cards = cards
+							cards = cards,
 						})
+						table.remove( Game.Objects[GroupName], i )
+						self:remove()
+						return
 					end
 				end
 			end
@@ -75,7 +80,12 @@ local card = {
 		
 	end,
 	remove = function( self )
-		
+		for i, v in pairs( Game.Objects.Cards ) do
+			if v == self then
+				table.remove( Game.Objects.Cards, i )
+				break
+			end
+		end
 	end,
 	drag = function( self, x, y )
 		self.dragged = true

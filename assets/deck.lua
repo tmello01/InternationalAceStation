@@ -1,5 +1,5 @@
-local CardWidth = 38
-local CardHeight = 61
+local DeckWidth = 38
+local DeckHeight = 61
 
 local function checkCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 	return x1 < x2+w2 and
@@ -10,14 +10,14 @@ end
 
 
 
-local card = {
+local deck = {
 	suit = "diamonds",
 	value = "2",
 	--texture = Textures['diamond/1.png'],
 	x = 0,
 	y = 0,
-	w = CardWidth,
-	h = CardHeight,
+	w = DeckWidth,
+	h = DeckHeight,
 	visible = true,
 	dragx = 0, --Drag X position
 	dragy = 0, --Drag Y position
@@ -29,6 +29,7 @@ local card = {
 	currentTouchID = -1,
 	touched = false,
 	held = false,
+	type = "deck",
 	tapTimer = timer.new(0.5),
 	getPosition = function( self )
 		return self.x, self.y
@@ -46,13 +47,52 @@ local card = {
 		end
 	end,
 	onSingleTap = function( self ) --What happens when the user taps once
-		self.flipped = not self.flipped
+		if #self.cards > 2 then
+			--Drop card
+			print( #self.cards )
+			print("one card")
+			local c = self.cards[#self.cards] --the card we're dropping
+			local newcard = card:new({
+				suit = c.suit,
+				value = c.value,
+				x = self.x + self.w + 25,
+				y = self.y,
+				flipped = c.flipped,
+			})
+			table.remove( self.cards, #self.cards )
+			newcard:topDrawOrder()
+		else
+			print("two cards")
+			local c1 = self.cards[1]
+			local c2 = self.cards[2]
+			card:new({
+				suit = c1.suit,
+				value = c1.value,
+				x = self.x + self.w/2 + 5,
+				y = self.y,
+				flipped = c1.flipped,
+			})
+			card:new({
+				suit = c2.suit,
+				value = c2.value,
+				x = self.x - self.w/2 - 5,
+				y = self.y,
+				flipped = c2.flipped,
+			})
+			self:remove()
+			--Split deck into the last two cards
+		end
 	end,
 	onDoubleTap = function( self ) --What happens when the user taps twice
 		
 	end,
 	remove = function( self )
-		
+		for i, v in pairs( Game.Objects.Decks ) do
+			if v == self then
+				table.remove( Game.Objects.Decks, i )
+				break
+			end
+		end
 	end,
 	drag = function( self, x, y )
 		self.dragged = true
@@ -73,11 +113,13 @@ local card = {
 	end,
 	draw = function( self )
 		if self.visible then
-			if not self.flipped then
-				love.graphics.draw( Cards[self.suit][self.value], self.x, self.y, 0, 2, 2 )
-			else
+			local topCard = self.cards[#self.cards]
+			if topCard.flipped then
 				love.graphics.draw( Cards.backs.earth, self.x, self.y, 0, 2, 2 )
+			else
+				love.graphics.draw( Cards[topCard.suit][topCard.value], self.x, self.y, 0, 2, 2 )
 			end
+			love.graphics.draw( Cards.backs.cardstack, self.x, self.y, 0, 2, 2 )
 		end
 	end,
 	startTouch = function( self, id, x, y )
@@ -111,25 +153,25 @@ local card = {
 		for _, Group in pairs( Game.Objects ) do
 			for i, v in pairs( Group ) do
 				if v == self then
-					table.remove( Game.Objects.Cards, i )
-					table.insert( Game.Objects.Cards, self )
+					table.remove( Game.Objects.Decks, i )
+					table.insert( Game.Objects.Decks, self )
 					break
 				end
 			end
 		end
 	end,
 }
-card.__index = card
+deck.__index = deck
 
-function card:new( data )
-	print( "[card] Making new card..." )
+function deck:new( data )
+	print( "[deck] Making new deck..." )
 	local data = data or { }
-	local self = setmetatable(data, card)
+	local self = setmetatable(data, deck)
 	self.__index = self
 	
-	table.insert( Game.Objects.Cards, self )
+	table.insert( Game.Objects.Decks, self )
 	
 	return self
 end
 
-return card
+return deck

@@ -30,10 +30,8 @@ timer = require "timer"
 touch = require "touch"
 ui = require "ui"
 card = require "assets/card"
+deck = require "assets/deck"
 timer = require "timer"
-local Windows = love.system.getOS() == "Windows"
-
-touchmanager = require "touchmanager"
 local Windows = love.system.getOS() == "Windows"
 
 --Creates table for server information, to be used by servercreate.lua

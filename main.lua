@@ -101,7 +101,7 @@ function math.clamp(low, n, high) return math.min(math.max(n, low), high) end
 
 function love.load()
 
-	--newcard = card:new()
+	newcard = card:new()
 	
 	--Tyler's Stuff....shh...don't touch :)
 	text = "Please enter your name!: "
@@ -144,7 +144,6 @@ function love.update( dt )
 
 end
 function love.draw()
-
 	ui.draw()
 	local fuckary = 0
 	--Draw cards--
@@ -158,7 +157,7 @@ function love.draw()
 			fuckary = fuckary + 1
 		
 		end
-	love.graphics.printf(yourname)
+	love.graphics.printf(text)
 	end
 		--Alright, Carry on. ~Tyler
 end

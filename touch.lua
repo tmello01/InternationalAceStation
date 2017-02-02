@@ -67,6 +67,12 @@ function t:updatePosition( x, y )
 				end
 			end
 		end
+		
+		for i, v in pairs( Game.Objects ) do
+			if v.currentTouchID == self.id then
+				v:drag( x, y )
+			end
+		end
 	end
 end
 

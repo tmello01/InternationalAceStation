@@ -38,12 +38,10 @@ function t:new( id, x, y )
 	local data = {id=id,x=x,y=y}
 	local self = setmetatable(data,t)
 	table.insert( touches, self )
-	for i, group in pairs( Game.Objects ) do
-		for k, v in pairs( ReverseTable(group) ) do
-			if x >= v.x and x <= v.x + (v.w*2) and y >= v.y and y <= v.y + (v.h*2) then
-				v:startTouch(id,x,y)
-				break
-			end
+	for i, v in pairs( ReverseTable(Game.Objects) ) do
+		if x >= v.x and x <= v.x + (v.w*2) and y >= v.y and y <= v.y + (v.h*2) then
+			v:startTouch(id,x,y)
+			break
 		end
 	end
 	return self
@@ -58,11 +56,9 @@ function t:updatePosition( x, y )
 		self.x = x or self.x
 		self.y = y or self.y
 		
-		for i, group in pairs( Game.Objects ) do
-			for k, v in pairs( group ) do
-				if v.currentTouchID == self.id then
-					v:drag( x, y )
-				end
+		for i, v in pairs( Game.Objects ) do
+			if v.currentTouchID == self.id then
+				v:drag( x, y )
 			end
 		end
 	end
@@ -87,11 +83,9 @@ end
 function public.remove(id,x,y)
 	for i, t in pairs( touches ) do
 		if t.id == id then
-			for j, group in pairs( Game.Objects ) do
-				for k, v in pairs( group ) do
-					if v.currentTouchID == t.id then
-						v:endTouch( t.id )
-					end
+			for i, v in pairs( Game.Objects ) do
+				if v.currentTouchID == t.id then
+					v:endTouch( t.id )
 				end
 			end
 			table.remove( touches, i )

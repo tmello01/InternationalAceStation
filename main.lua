@@ -39,12 +39,7 @@ local Windows = love.system.getOS() == "Windows"
 
 
 Game = {
-	Objects = {
-		Decks = {},
-		Cards = {},
-		Chips = {},
-		ChipStacks = {},
-	},
+	Objects = {},
 	Zones = {},
 	Players = {},
 	Globals = {
@@ -65,6 +60,8 @@ for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) )
 	end
 end
 
+love.graphics.setBackgroundColor( 210, 210, 210 )
+
 WindowsTouchID = os.clock()
 
 --ADD MATH.CLAMP FUNCTION--
@@ -76,11 +73,27 @@ function love.load()
 	local suits = { "diamonds", "clubs", "hearts", "spades" }
 	
 	MainPanel = ui.new({y=500, h = 100, w = 800})
-	NewButton = MainPanel:add("button", {y=500, w= 100, text="Add Card", background={13,71,161}})
+	NewButton = MainPanel:add("button", {w= 100, text="Add Card", background={13,71,161}})
 	NewButton.onclick = function()
 		card:new({suit=suits[love.math.random(1,4)], value=tostring(love.math.random(2,10)),x = love.math.random(0,200), y = love.math.random(0,200)})
 	end
-	ClearButton = MainPanel:add("button", {y=500, x=100, w=100, background = {198, 40, 40}, text="Clear"})
+	NewDeckButton = MainPanel:add("button", {
+		background = {239, 108, 0},
+		text = "New Deck",
+		w = 100,
+		x = 100,
+	})
+	NewDeckButton.onclick = function()
+		local cards = {}
+		for i=3, love.math.random(20) do
+			cards[#cards+1] = {
+				suit = suits[love.math.random(1,4)],
+				value = tostring(love.math.random(2,10)),
+			}
+		end
+		deck:new({x = love.math.random(0,200), y=love.math.random(0,200), cards=cards})
+	end
+	ClearButton = MainPanel:add("button", {x=200, w=100, background = {198, 40, 40}, text="Clear"})
 	ClearButton.onclick = function()
 		Game.Objects = {
 			Decks = {},
@@ -101,10 +114,8 @@ function love.update( dt )
 		end
 	end
 	
-	for _, Group in pairs( Game.Objects ) do
-		for i, v in pairs( Group ) do
-			if v.update then v:update( dt ) end
-		end
+	for _, v in pairs( Game.Objects ) do
+		if v.update then v:update(dt) end
 	end
 
 end
@@ -127,10 +138,8 @@ end
 function love.draw()
 
 	ui.draw()
-	for _, Group in pairs( Game.Objects ) do
-		for i, v in pairs( Group ) do
-			if v.draw then v:draw() end
-		end
+	for i, v in pairs( Game.Objects ) do
+		if v.draw then v:draw() end
 	end
 	local fuckary = 0
 	--Draw cards--

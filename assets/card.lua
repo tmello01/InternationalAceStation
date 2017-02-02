@@ -35,40 +35,38 @@ local card = {
 		return self.x, self.y
 	end,
 	onHold = function( self )
-		for GroupName, Group in pairs( Game.Objects ) do
-			for i, v in pairs( Group ) do
-				if v ~= self then
-					if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
-						--Create a deck--
-						local avgx = (self.x + v.x)/2
-						local avgy = (self.y + v.y)/2
-						local cards = {
-							[1] = {
-								suit = self.suit,
-								value = self.value,
-								flipped = self.flipped,
-							},
+		for i, v in pairs( Game.Objects ) do
+			if v ~= self then
+				if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
+					--Create a deck--
+					local avgx = (self.x + v.x)/2
+					local avgy = (self.y + v.y)/2
+					local cards = {
+						[1] = {
+							suit = self.suit,
+							value = self.value,
+							flipped = self.flipped,
+						},
+					}
+					if v.type == "card" then
+						cards[2] = {
+							suit = v.suit,
+							value = v.value,
+							flipped = v.flipped
 						}
-						if v.type == "card" then
-							cards[2] = {
-								suit = v.suit,
-								value = v.value,
-								flipped = v.flipped
-							}
-						else
-							for i, v in pairs( v.cards ) do
-								cards[i+1] = v
-							end
+					else
+						for i, v in pairs( v.cards ) do
+							cards[i+1] = v
 						end
-						deck:new({
-							x = avgx,
-							y = avgy,
-							cards = cards,
-						})
-						table.remove( Game.Objects[GroupName], i )
-						self:remove()
-						return
 					end
+					deck:new({
+						x = avgx,
+						y = avgy,
+						cards = cards,
+					})
+					table.remove( Game.Objects, i )
+					self:remove()
+					return
 				end
 			end
 		end
@@ -80,9 +78,9 @@ local card = {
 		
 	end,
 	remove = function( self )
-		for i, v in pairs( Game.Objects.Cards ) do
+		for i, v in pairs( Game.Objects ) do
 			if v == self then
-				table.remove( Game.Objects.Cards, i )
+				table.remove( Game.Objects, i )
 				break
 			end
 		end
@@ -95,7 +93,6 @@ local card = {
 	update = function( self, dt )
 		if self.visible then
 			if self.touched and not self.dragged then
-				print( self.tapTimer:getTime() )
 				if self.tapTimer:update( dt ) then
 					self.held = true
 					if self.onHold then self:onHold() end
@@ -125,14 +122,12 @@ local card = {
 	endTouch = function( self, id )
 		if self.touched then
 			self.tapTimer:stop()
-			print( self.held, self.dragged )
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
 			self.dragged = false
 			self.held = false
 			self.touched = false
-			print( "end touch" )
 		end
 	end,
 	cancelTouchManager = function( self, id )
@@ -141,13 +136,11 @@ local card = {
 		end
 	end,
 	topDrawOrder = function( self )
-		for _, Group in pairs( Game.Objects ) do
-			for i, v in pairs( Group ) do
-				if v == self then
-					table.remove( Game.Objects.Cards, i )
-					table.insert( Game.Objects.Cards, self )
-					break
-				end
+		for i, v in pairs( Game.Objects ) do
+			if v == self then
+				table.remove( Game.Objects, i )
+				table.insert( Game.Objects, self )
+				break
 			end
 		end
 	end,
@@ -160,7 +153,7 @@ function card:new( data )
 	local self = setmetatable(data, card)
 	self.__index = self
 	
-	table.insert( Game.Objects.Cards, self )
+	table.insert( Game.Objects, self )
 	
 	return self
 end

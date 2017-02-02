@@ -49,7 +49,7 @@ function ui.getAbsX(obj)
 end
 function ui.getAbsY(obj)
 	if obj.parent then
-		return obj.y + ui.getAbsX(obj.parent)
+		return obj.y + ui.getAbsY(obj.parent)
 	else
 		return obj.y
 	end

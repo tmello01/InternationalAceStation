@@ -35,13 +35,37 @@ local deck = {
 		return self.x, self.y
 	end,
 	onHold = function( self )
-		for _, Group in pairs( Game.Objects ) do
-			for i, v in pairs( Group ) do
-				if v ~= self then
-					if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
-						--Create a deck--
-						
+		for i, v in pairs( Game.Objects ) do
+			if v ~= self then
+				if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
+					--Create a deck--
+					local avgx = (self.x + v.x)/2
+					local avgy = (self.y + v.y)/2
+					local cards = {}
+					if v.type == "card" then
+						cards[#cards+1] = {
+							suit = v.suit,
+							value = v.value,
+							flipped = v.flipped
+						}
+					else
+						for i, v in pairs( v.cards ) do
+							cards[i] = v
+						end
 					end
+					table.insert( cards, {
+						suit = self.suit,
+						value = self.value,
+						flipped = self.flipped,
+					})
+					deck:new({
+						x = avgx,
+						y = avgy,
+						cards = cards,
+					})
+					table.remove( Game.Objects, i )
+					self:remove()
+					return
 				end
 			end
 		end
@@ -49,8 +73,6 @@ local deck = {
 	onSingleTap = function( self ) --What happens when the user taps once
 		if #self.cards > 2 then
 			--Drop card
-			print( #self.cards )
-			print("one card")
 			local c = self.cards[#self.cards] --the card we're dropping
 			local newcard = card:new({
 				suit = c.suit,
@@ -62,7 +84,6 @@ local deck = {
 			table.remove( self.cards, #self.cards )
 			newcard:topDrawOrder()
 		else
-			print("two cards")
 			local c1 = self.cards[1]
 			local c2 = self.cards[2]
 			card:new({
@@ -87,9 +108,9 @@ local deck = {
 		
 	end,
 	remove = function( self )
-		for i, v in pairs( Game.Objects.Decks ) do
+		for i, v in pairs( Game.Objects ) do
 			if v == self then
-				table.remove( Game.Objects.Decks, i )
+				table.remove( Game.Objects, i )
 				break
 			end
 		end
@@ -102,7 +123,6 @@ local deck = {
 	update = function( self, dt )
 		if self.visible then
 			if self.touched and not self.dragged then
-				print( self.tapTimer:getTime() )
 				if self.tapTimer:update( dt ) then
 					self.held = true
 					if self.onHold then self:onHold() end
@@ -134,14 +154,12 @@ local deck = {
 	endTouch = function( self, id )
 		if self.touched then
 			self.tapTimer:stop()
-			print( self.held, self.dragged )
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
 			self.dragged = false
 			self.held = false
 			self.touched = false
-			print( "end touch" )
 		end
 	end,
 	cancelTouchManager = function( self, id )
@@ -150,13 +168,11 @@ local deck = {
 		end
 	end,
 	topDrawOrder = function( self )
-		for _, Group in pairs( Game.Objects ) do
-			for i, v in pairs( Group ) do
-				if v == self then
-					table.remove( Game.Objects.Decks, i )
-					table.insert( Game.Objects.Decks, self )
-					break
-				end
+		for i, v in pairs( Game.Objects ) do
+			if v == self then
+				table.remove( Game.Objects, i )
+				table.insert( Game.Objects, self )
+				break
 			end
 		end
 	end,
@@ -169,7 +185,7 @@ function deck:new( data )
 	local self = setmetatable(data, deck)
 	self.__index = self
 	
-	table.insert( Game.Objects.Decks, self )
+	table.insert( Game.Objects, self )
 	
 	return self
 end

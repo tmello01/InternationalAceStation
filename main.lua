@@ -21,7 +21,8 @@
 require "ser"
 
 assets = require "assetmanager"
-
+text = ""
+yourname = ""
 tween = require "tween"
 require "camera"
 timer = require "timer"
@@ -30,7 +31,6 @@ ui = require "ui"
 card = require "assets/card"
 timer = require "timer"
 touchmanager = require "touchmanager"
-
 local Windows = love.system.getOS() == "Windows"
 
 --Creates table for server information, to be used by servercreate.lua
@@ -101,7 +101,7 @@ function math.clamp(low, n, high) return math.min(math.max(n, low), high) end
 
 function love.load()
 
-	newcard = card:new()
+	--newcard = card:new()
 	
 	--Tyler's Stuff....shh...don't touch :)
 	text = "Please enter your name!: "
@@ -110,25 +110,20 @@ function love.load()
 
 end
 --don't judge
-function love.textinput(t, key)
-	yourname = text
-	text = text .. t
-	function love.keyreleased ( key )
-		if key == "return" then
-			text = nil
-		end
-	end
-	return yourname
+function love.textinput( t )
+   text = text .. t
 end
 
-function love.keypressed(key)
-    if key == "backspace" then
-        local byteoffset = utf8.offset(text, -1)
- 
-        if byteoffset then
-            text = string.sub(text, 1, byteoffset - 1)
-        end
-    end
+function love.keyreleased( key )
+   if key == "return" then
+      yourname = text
+      text = ""
+   end
+end
+function love.keypressed( key )
+   if key == "backspace" then
+      text = text:sub(1,-2)
+   end
 end
 --Tyler's stuff ends here so fuck with whatever you want
 function love.update( dt )
@@ -157,7 +152,7 @@ function love.draw()
 			fuckary = fuckary + 1
 		
 		end
-	love.graphics.printf(text)
+	love.graphics.print(yourname)
 	end
 		--Alright, Carry on. ~Tyler
 end

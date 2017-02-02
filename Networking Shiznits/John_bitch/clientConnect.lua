@@ -1,5 +1,5 @@
-local sock = require "sock"
-
+sock = require "sock"
+bitser = require "bitser"
 function connectToServer()
 	client = sock.newClient("127.0.0.1", 22122)
 

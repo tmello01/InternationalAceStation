@@ -46,7 +46,6 @@ function t:new( id, x, y )
 			end
 		end
 	end
-	return self
 end
 
 function t:update( dt )
@@ -68,6 +67,17 @@ function t:updatePosition( x, y )
 	end
 end
 
+function t:remove()
+	for i, v in pairs( touches ) do
+		if v == self then
+			touchmanager.remove( self.id )
+			touches[i] = nil
+			v = nil
+			self = nil
+			break
+		end
+	end
+end
 
 --PUBLIC FUNCTIONS--
 

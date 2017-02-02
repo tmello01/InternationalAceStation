@@ -19,10 +19,11 @@
 
 --Simon was here 2k17--
 
+
+
 require "ser"
 
 assets = require "assetmanager"
-
 tween = require "tween"
 require "camera"
 timer = require "timer"
@@ -30,12 +31,14 @@ touch = require "touch"
 ui = require "ui"
 card = require "assets/card"
 timer = require "timer"
-
 local Windows = love.system.getOS() == "Windows"
 
+touchmanager = require "touchmanager"
+local Windows = love.system.getOS() == "Windows"
 
-Tileset = love.graphics.newImage("assets/images/cards.png")
-Tileset:setFilter("nearest", "nearest")
+--Creates table for server information, to be used by servercreate.lua
+
+
 
 Game = {
 	Objects = {
@@ -51,19 +54,6 @@ Game = {
 		CardWidth = 38,
 		CardHeight = 61,
 	},
-	Spritebatch = love.graphics.newSpriteBatch(Tileset, 5000),
-	
-	UpdateSpritebatch = function()
-		Game.Spritebatch:clear()
-		for i, v in pairs( Game.Objects ) do
-			for k, z in pairs( v ) do
-				if z.texture and TextureQuads[ z.texture ] then
-					Game.Spritebatch:add( TextureQuads[ z.texture ], z.x, z.y, 0, 2, 2 )
-				end
-			end
-		end
-	end,
-	
 	
 	getState = function() return Game.Globals.Gamestate end,
 }
@@ -120,7 +110,22 @@ function love.update( dt )
 	end
 
 end
+--don't judge
+function love.textinput( t )
+   text = text .. t
+end
 
+function love.keyreleased( key )
+   if key == "return" then
+      yourname = text
+      text = ""
+   end
+end
+function love.keypressed( key )
+   if key == "backspace" then
+      text = text:sub(1,-2)
+   end
+end
 function love.draw()
 
 	ui.draw()
@@ -129,6 +134,20 @@ function love.draw()
 			if v.draw then v:draw() end
 		end
 	end
+	local fuckary = 0
+	--Draw cards--
+	--WAIT! Also Tyler's thing. Not really needed, but would be appreciated if not fucked with. Thanks! ~Tyler
+	if fuckary<5 then
+		if text == nil then
+			return 1
+		else
+			love.graphics.printf(text, 0, 0, love.graphics.getWidth())
+			fuckary = fuckary + 1
+		
+		end
+	love.graphics.print(yourname)
+	end
+		--Alright, Carry on. ~Tyler
 end
 
 
@@ -164,5 +183,6 @@ function love.keyreleased( key )
 	if key == "n" then
 		local suits = { "diamonds", "clubs", "hearts", "spades" }
 		card:new({suit=suits[love.math.random(1,4)], value=tostring(love.math.random(2,10)),x = love.math.random(0,200), y = love.math.random(0,200)})
+		touch.remove( 100, x, y )
 	end
 end

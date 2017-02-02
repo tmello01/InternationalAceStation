@@ -29,7 +29,6 @@ local card = {
 	currentTouchID = -1,
 	touched = false,
 	held = false,
-	type = "card",
 	tapTimer = timer.new(0.5),
 	getPosition = function( self )
 		return self.x, self.y
@@ -40,29 +39,7 @@ local card = {
 				if v ~= self then
 					if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
 						--Create a deck--
-						local avgx = (self.x + v.x)/2
-						local avgy = (self.y + v.y)/2
-						local cards = {
-							[1] = {
-								suit = self.suit,
-								value = self.value,
-							},
-						}
-						if v.type == "card" then
-							cards[2] = {
-								suit = v.suit,
-								value = v.value,
-							}
-						else
-							for i, v in pairs( v.cards ) do
-								cards[i+1] = v
-							end
-						end
-						deck:new({
-							x = avgx,
-							y = avgy,
-							cards = cards
-						})
+						
 					end
 				end
 			end

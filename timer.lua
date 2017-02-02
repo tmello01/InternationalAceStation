@@ -1,7 +1,7 @@
 --Timer--
 
 local timer = {
-	limit = 1,
+	limit = 0.5,
 	onComplete = function() end,
 	timer = 0,
 	active = true
@@ -10,7 +10,7 @@ timer.__index = timer
 local timers = {}
 
 function timer:new( finishTime, onComplete )
-	local limit = finishTime or 1
+	local limit = finishTime or 0.5
 	local onComplete = onComplete or function() end
 	local data = {
 		limit = limit,

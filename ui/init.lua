@@ -21,7 +21,7 @@ end
 
 function ui.font(size)
 	if not ui.fonts[size] then
-		ui.fonts[size] = love.graphics.newFont(size)
+		ui.fonts[size] = love.graphics.newFont("assets/fonts/Roboto-Light.ttf", size)
 	end
 	return ui.fonts[size]
 end

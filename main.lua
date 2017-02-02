@@ -73,7 +73,36 @@ function love.load()
 	local suits = { "diamonds", "clubs", "hearts", "spades" }
 	local PanelW = love.graphics.getWidth()/4
 	AdminPanel = ui.new({w=PanelW, h = love.graphics.getHeight(), x = love.graphics.getWidth()-PanelW})
-	AdminPanel:add("text", {text = "Manage Game", align="center", y=10})
+	AdminPanel:add("text", {text = "MANAGE GAME", align="center", y=10, font = ui.font(22)})
+	AdminPanel:add("text", {text = "Add Items", align="center", y = 55, font = ui.font(16)})
+	NewCardButton = AdminPanel:add("button", {
+		w = math.floor(AdminPanel.w/2),
+		h = math.floor(AdminPanel.w/2),
+		y = 80,
+		background = {33,150,243},
+		foreground = {255, 255, 255},
+		text = "Card",
+	})
+	NewCardButton.onclick = function()
+		card:new({
+			x = love.math.random(0, love.graphics.getWidth()-50),
+			y = love.math.random(0, love.graphics.getHeight()-100),
+			suit = suits[love.math.random(1,4)],
+			value = tostring(love.math.random(2,10)),
+		})
+	end
+	NewDeckButton = AdminPanel:add("button", {
+		x = math.ceil(AdminPanel.w/2),
+		y = 80,
+		w = math.floor(AdminPanel.w/2),
+		h = math.floor(AdminPanel.w/2),
+		background = {56, 142, 60},
+		foreground = {255, 255, 255},
+		text = "Deck",
+	})
+	NewDeckButton.onclick = function()
+
+	end
 end
 
 function love.update( dt )
@@ -109,24 +138,10 @@ function love.keypressed( key )
 end
 function love.draw()
 
-	ui.draw()
 	for i, v in pairs( Game.Objects ) do
 		if v.draw then v:draw() end
 	end
-	local fuckary = 0
-	--Draw cards--
-	--WAIT! Also Tyler's thing. Not really needed, but would be appreciated if not fucked with. Thanks! ~Tyler
-	if fuckary<5 then
-		if text == nil then
-			return 1
-		else
-			love.graphics.printf(text, 0, 0, love.graphics.getWidth())
-			fuckary = fuckary + 1
-		
-		end
-	love.graphics.print(yourname)
-	end
-		--Alright, Carry on. ~Tyler
+	ui.draw()
 end
 
 

@@ -13,14 +13,15 @@ local panel = {
 	background = {255,255,255},
 	foreground = {12,12,12},
 	children = { },
-	state = "Main",
 	visible = true,
+	substate = "Main",
 }
 panel.__index = panel
 
 function panel:new(data, parent)
 	local data = data or { }
 	local self = setmetatable(data, panel)
+	self.state = data.state or "Main"
 	self.__index = self
 	if parent then
 		self.parent = parent
@@ -34,7 +35,6 @@ end
 
 function panel:update( dt )
 	if ui.checkState(self) then
-		--
 		for i, v in pairs( self.children ) do
 			if v.update then v:update( dt ) end
 		end
@@ -55,6 +55,7 @@ function panel:draw()
 		for i, v in pairs( self.children ) do
 			if v.draw then v:draw() end
 		end
+		love.graphics.setColor( 255, 255, 255 )
 	end
 end
 
@@ -66,9 +67,9 @@ function panel:mousepressed( x, y, button )
 			for i, v in pairs( self.children ) do
 				if v.mousepressed then v:mousepressed( x,y,button ) end
 			end
+			return true
 		end
 	end
-
 end
 function panel:mousereleased( x, y, button )
 
@@ -81,5 +82,27 @@ function panel:mousereleased( x, y, button )
 		end
 	end
 
+end
+
+function panel:textinput( text )
+	if ui.checkState( self ) then
+		for i, v in pairs( self.children ) do
+			if v.textinput then v:textinput(text) end
+		end
+	end
+end
+function panel:keypressed( key )
+	if ui.checkState( self ) then
+		for i, v in pairs( self.children ) do
+			if v.keypressed then v:keypressed( key ) end
+		end
+	end
+end
+function panel:keyreleased( key )
+	if ui.checkState( self ) then
+		for i, v in pairs( self.children ) do
+			if v.keyreleased then v:keyreleased( key ) end
+		end
+	end
 end
 return panel

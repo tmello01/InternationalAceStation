@@ -7,18 +7,11 @@ local function checkCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 		y1 < y2+h2 and
 		y2 < y1+h1
 end
-local function ReverseTable(t)
-    local reversedTable = {}
-    local itemCount = #t
-    for k, v in ipairs(t) do
-        reversedTable[itemCount + 1 - k] = v
-    end
-    return reversedTable
-end
+
+
 
 local card = {
-	suit = "diamonds",
-	value = "2",
+	suit = "any",
 	--texture = Textures['diamond/1.png'],
 	x = 0,
 	y = 0,
@@ -30,7 +23,7 @@ local card = {
 	dragged = false, --If card is being dragged or not
 	inDeck = false, --Possibly defunct
 	inhand = false,
-	tweento = false,
+	isTemplate = true,
 	visible = true,
 	firstTouchID = -1,
 	lastTouchID = 1,
@@ -43,45 +36,40 @@ local card = {
 		return self.x, self.y
 	end,
 	onHold = function( self )
-
-		local cardsToStack = {}
 		for i, v in pairs( Game.Objects ) do
 			if v ~= self then
 				if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
-					table.insert( cardsToStack, v )
-				end
-			end
-		end
-		if #cardsToStack > 0 then
-			local cards = {} --a table to pass to the new deck
-			for i, v in pairs( cardsToStack ) do
-				if v.type == "card" then
-					table.insert( cards, {
-						suit = v.suit,
-						value = v.value,
-						flipped = v.flipped
-					})
-				elseif v.type == "deck" then
-					for k, z in pairs( v.cards ) do
-						table.insert( cards, { 
-							suit = z.suit,
-							value = z.value,
-							flipped = z.flipped,
+					--Create a deck--
+					local avgx = (self.x + v.x)/2
+					local avgy = (self.y + v.y)/2
+					local cards = {}
+					if v.type == "card" then
+						table.insert( cards, {
+							suit = v.suit,
+							value = v.value,
+							flipped = v.flipped
 						})
+					else
+						for i, z in pairs( v.cards ) do
+							table.insert( cards, z )
+						end
 					end
+
+					table.insert( cards, {
+						suit = self.suit or "any",
+						value = self.value or "any",
+						flipped = self.flipped,
+					})
+					deckTemplate:new({
+						x = avgx,
+						y = avgy,
+						cards = cards,
+					})
+					table.remove( Game.Objects, i )
+					self:remove()
+					return
 				end
 			end
-			table.insert( cards, {
-				value = self.value,
-				suit = self.suit,
-				flipped = self.flipped
-			})
-			deck:new({x = self.x, y = self.y, cards=cards})
-			for i, v in pairs( cardsToStack ) do
-				v:remove()
-			end
-			self:remove()
-			return
 		end
 	end,
 	onSingleTap = function( self ) --What happens when the user taps once
@@ -113,19 +101,18 @@ local card = {
 					self.tapTimer:stop()
 				end
 			end
-			if self.tweento then
-				if self.tweentotween:update( dt ) then
-					self.tweento = false
-				end
-			end
 		end
 	end,
 	draw = function( self )
 		if self.visible then
-			if not self.flipped then
-				love.graphics.draw( Cards[self.suit][self.value], self.x, self.y, 0, 2, 2 )
-			else
+			if self.flipped then
 				love.graphics.draw( Cards.backs.earth, self.x, self.y, 0, 2, 2 )
+			else
+				if self.suit == "any" then
+					love.graphics.draw( Cards.backs.blank, self.x, self.y, 0, 2, 2 )
+				else
+					love.graphics.draw( Cards[self.suit][self.value], self.x, self.y, 0, 2, 2 )
+				end
 			end
 		end
 	end,
@@ -183,17 +170,8 @@ function card:new( data )
 	local self = setmetatable(data, card)
 	self.__index = self
 	
-	if self.tweentox or self.tweentoy then
-		self.tweentox = self.tweentox or self.x
-		self.tweentoy = self.tweentoy or self.y
-		self.tweento = true
-		self.tweentotween = tween.new(0.5, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
-	end
-
 	table.insert( Game.Objects, self )
 	
-
-
 	return self
 end
 

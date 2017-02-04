@@ -10,10 +10,10 @@ local text = {
 	y = 0,
 	background = {255,255,255},
 	foreground = {12,12,12},
-	state = "Main",
 	align = "left",
 	text = "Hello World!",
 	visible = true,
+	substate = "Main",
 }
 text.__index = text
 
@@ -22,6 +22,7 @@ function text:new(data, parent)
 	local self = setmetatable(data, text)
 	self.__index = self
 	self.parent = parent or error("Text object needs a parent!")
+	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(16) end
 
 	table.insert(parent.children,self)

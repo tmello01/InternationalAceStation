@@ -2,28 +2,40 @@ local ui = {
 	path = ..., --absolute path to this UI file
 	roots = { }, --for the rooted panels
 	state = "Main",
-	fonts = { }, --for containing all UI made fonts
+	fonts = {
+	}, --for containing all UI made fonts
 }
+
+for i, v in pairs(love.filesystem.getDirectoryItems("assets/fonts")) do
+	ui.fonts[v:sub(1,-5)] = {}
+end
 
 
 ui.elements = {}
 for i, v in pairs( love.filesystem.getDirectoryItems(ui.path.."/elem") ) do
 	ui.elements[v:sub(1,-5)] = require(ui.path.."/elem/"..v:sub(1,-5))
 end
-
-function ui.checkState(obj)
-	if obj.state and (obj.state == ui.state or obj.state == "_ALL") and obj.visible then
+function ui.checkState(obj,dbug)
+	if obj.state and obj.state == ui.state and obj.visible then
+		if obj.parent then
+			if obj.parent.substate == obj.substate then
+				return true
+			else
+				return false
+			end
+		end
 		return true
 	else
 		return false
 	end
 end
 
-function ui.font(size)
-	if not ui.fonts[size] then
-		ui.fonts[size] = love.graphics.newFont("assets/fonts/Roboto-Light.ttf", size)
+function ui.font(size, font)
+	local font = font or "Roboto-Light"
+	if not ui.fonts[font][size] then
+		ui.fonts[font][size] = love.graphics.newFont("assets/fonts/"..font..".ttf", size)
 	end
-	return ui.fonts[size]
+	return ui.fonts[font][size]
 end
 
 function ui.lighten(r,g,b,amt)
@@ -76,6 +88,7 @@ end
 
 function ui.mousepressed( x, y, button )
 	for i, v in pairs( ui.roots ) do
+		print( i, v )
 		if v.mousepressed then v:mousepressed(x, y, button) end
 	end
 end
@@ -86,4 +99,19 @@ function ui.mousereleased( x, y, button )
 	end
 end
 
+function ui.textinput( text )
+	for i, v in pairs( ui.roots ) do
+		if v.textinput then v:textinput( text ) end
+	end
+end
+function ui.keypressed( key )
+	for i, v in pairs( ui.roots ) do
+		if v.keypressed then v:keypressed( key ) end
+	end
+end
+function ui.keyreleased( key )
+	for i, v in pairs( ui.roots ) do
+		if v.keyreleased then v:keyreleased( key ) end
+	end
+end
 return ui

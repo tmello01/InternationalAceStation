@@ -38,6 +38,7 @@ end
 function t:new( id, x, y )
 	local data = {id=id,x=x,y=y}
 	local self = setmetatable(data,t)
+	self.pastDeadzone = false
 	table.insert( touches, self )
 	for i, v in pairs( ReverseTable(Game.Objects) ) do
 		if x >= v.x and x <= v.x + (v.w*2) and y >= v.y and y <= v.y + (v.h*2) then
@@ -54,23 +55,19 @@ end
 
 function t:updatePosition( x, y )
 	if x ~= self.x or y ~= self.y then
+		local deadzone = 10 * (love.graphics.getWidth()/800)
 		if not self.pastDeadzone then
-			self.pastDeadzone = math.abs(x-self.x) > 5 or math.abs(y-self.y) > 5
-		end
-		if self.pastDeadzone then	
+			print( math.abs(x-self.x), deadzone )
+			self.pastDeadzone = math.abs(x-self.x) > deadzone or math.abs(y-self.y) > deadzone
+		else	
 			self.x = x or self.x
 			self.y = y or self.y
+			
 			
 			for i, v in pairs( Game.Objects ) do
 				if v.currentTouchID == self.id then
 					v:drag( x, y )
 				end
-			end
-		end
-		
-		for i, v in pairs( Game.Objects ) do
-			if v.currentTouchID == self.id then
-				v:drag( x, y )
 			end
 		end
 	end

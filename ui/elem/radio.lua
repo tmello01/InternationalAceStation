@@ -6,11 +6,13 @@ local radio = {
 	foreground = { 0, 0, 0 },
 	background = { 255, 255, 255 },
 	onchange = function() end,
-	state = "Main",
 	label = "Radio",
 	labelLocation = "right",
 
+	substate = "Main",
 	onHover = true,
+
+	align = "left",
 
 	hover = false,
 	selected = false,
@@ -25,6 +27,7 @@ function radio:new( data, parent )
 	local self = setmetatable(data, radio)
 	self.__index = self
 	self.parent = parent or error("Radio object needs a parent")
+	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(16) end
 
 	table.insert(parent.children,self)
@@ -48,12 +51,19 @@ end
 
 function radio:draw()
 	if ui.checkState(self) then
+		local x = ui.getAbsX(self)
+		local y = 0
+		if self.align == "center" then
+			local twp = self.parent.w --total width, parent
+			local tws = self.size + self.size/2 + self.font:getWidth(self.label)
+			x = math.ceil((twp/2 - tws/2) + ui.getAbsX(self))
+		end
 		if self.active then
 			love.graphics.setColor( self.foreground )
-			love.graphics.rectangle("fill", ui.getAbsX(self), ui.getAbsY(self), self.size, self.size)
+			love.graphics.rectangle("fill", x, ui.getAbsY(self), self.size, self.size)
 		else
 			love.graphics.setColor( self.foreground )
-			love.graphics.rectangle("line", ui.getAbsX(self), ui.getAbsY(self), self.size, self.size)
+			love.graphics.rectangle("line", x, ui.getAbsY(self), self.size, self.size)
 		end
 		if self.label then
 			if self.labelLocation == "left" then
@@ -61,7 +71,7 @@ function radio:draw()
 			else
 				love.graphics.setColor( self.foreground )
 				love.graphics.setFont( self.font )
-				love.graphics.print( self.label, math.floor(ui.getAbsX(self) + self.size + self.size/2), math.floor(ui.getAbsY(self)) )
+				love.graphics.print( self.label, math.floor(x + self.size + self.size/2), math.floor(ui.getAbsY(self)) )
 			end
 		end
 	end
@@ -70,7 +80,12 @@ end
 function radio:mousepressed( x, y, button )
 	if ui.checkState( self ) then
 		local ax, ay = ui.getAbsPos(self)
-		if x >= ax and x <= ax + self.size and y >= ay and y <= ay + self.size then
+		if self.align == "center" then
+			local twp = self.parent.w --total width, parent
+			local tws = self.size + self.size/2 + self.font:getWidth(self.label)
+			ax = math.ceil((twp/2 - tws/2) + ui.getAbsX(self))
+		end
+		if x >= ax and x <= ax + self.size + self.font:getWidth(self.label) and y >= ay and y <= ay + self.size then
 			self.selected = true
 		end
 	end
@@ -79,10 +94,16 @@ end
 function radio:mousereleased( x, y, button )
 	if ui.checkState( self ) then
 		local ax, ay = ui.getAbsPos(self)
-		if x >= ax and x <= ax + self.size and y >= ay and y <= ay + self.size then
+		if self.align == "center" then
+			local twp = self.parent.w --total width, parent
+			local tws = self.size + self.size/2 + self.font:getWidth(self.label)
+			ax = math.ceil((twp/2 - tws/2) + ui.getAbsX(self))
+		end
+		if x >= ax and x <= ax + self.size + self.font:getWidth(self.label) and y >= ay and y <= ay + self.size then
 			if self.selected then
 				if self.onchange then self.onchange() end
 				self.active = not self.active
+				self.selected = false
 			end
 		end
 	end

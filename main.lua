@@ -25,7 +25,17 @@ deck = require "assets/deck"
 deckTemplate = require "assets/deckTemplate"
 cardTemplate = require "assets/cardTemplate"
 local Windows = love.system.getOS() == "Windows"
+--Networking variables/shit
+local socket = require "socket"
 
+local address, port = "localhost", 11111
+
+local entity 
+local updaterate = 0.1
+
+local world = {}
+local t
+--end networking variables
 
 ui.state = "Menu"
 --Creates table for server information, to be used by servercreate.lua
@@ -76,6 +86,22 @@ love.graphics.setBackgroundColor( hex2rgb("#2E7D32") )
 
 function love.load()
 	
+	--START NETWORKING
+	udp = socket.udp()
+
+	udp:settimeout(0)
+
+	udp:setpeername(127.0.0.1)
+
+	math.randomseed(os.time())
+	entity = tostring(math.random(99999))
+
+	local dg = string.format("%s %s %d %d", entity, 'at', 320, 240)
+	udp:send(dg)
+
+	t = 0
+	--END NETWORKING
+
 	makeMenus()
 
 	Tweens = {
@@ -111,6 +137,10 @@ function love.load()
 end
 
 function love.update( dt )
+
+	--BEGIN NETWORKING
+
+	t = t + deltatime
 
 	ui.update( dt )
 	if Windows then

@@ -16,7 +16,7 @@ function makeMenus()
 		"Breaking the speed limit by 17,985mp/h!",
 		"Circumnavigating in 100 minutes or less!",
 		"All the people look like ants from here!",
-
+		"I can see his wall from here!",
 	}
 
 	AdminPanel = ui.new({w=PanelW, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, substate="Hidden"})

@@ -57,7 +57,6 @@ function t:updatePosition( x, y )
 	if x ~= self.x or y ~= self.y then
 		local deadzone = 10 * (love.graphics.getWidth()/800)
 		if not self.pastDeadzone then
-			print( math.abs(x-self.x), deadzone )
 			self.pastDeadzone = math.abs(x-self.x) > deadzone or math.abs(y-self.y) > deadzone
 		else	
 			self.x = x or self.x

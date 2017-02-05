@@ -98,7 +98,10 @@ function textinput:mousepressed( x, y, button )
 end
 
 function textinput:textinput(input)
-	if ui.checkState( self ) and self.active and #self.text < self.maxlength then
+	if ui.checkState(self) then
+		print(#self.text, self.maxlength)
+	end
+	if ui.checkState( self ) and self.active and (#self.text < self.maxlength or self.maxlength < 0) then
 		self.text = self.text .. input
 		return
 	end
@@ -111,6 +114,7 @@ function textinput:keypressed(key)
 		elseif key == "return" then
 			self.active = false
 			if self.onreturn then self.onreturn() end
+			love.keyboard.setTextInput( false )
 		end
 		return
 	end

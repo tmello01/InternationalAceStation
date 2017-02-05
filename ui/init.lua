@@ -2,8 +2,8 @@ local ui = {
 	path = ..., --absolute path to this UI file
 	roots = { }, --for the rooted panels
 	state = "Main",
-	fonts = {
-	}, --for containing all UI made fonts
+	fonts = {}, --for containing all UI made fonts
+	images = {},
 }
 
 for i, v in pairs(love.filesystem.getDirectoryItems("assets/fonts")) do
@@ -33,9 +33,20 @@ end
 function ui.font(size, font)
 	local font = font or "Roboto-Light"
 	if not ui.fonts[font][size] then
-		ui.fonts[font][size] = love.graphics.newFont("assets/fonts/"..font..".ttf", size)
+		if love.filesystem.isFile("assets/fonts/"..font..".ttf") then
+			ui.fonts[font][size] = love.graphics.newFont("assets/fonts/"..font..".ttf", size)
+		elseif love.filesystem.isFile("assets/fonts/"..font..".otf") then
+			ui.fonts[font][size] = love.graphics.newFont("assets/fonts/"..font..".otf", size)
+		end
 	end
 	return ui.fonts[font][size]
+end
+function ui.image(path)
+	local path = path or "cards/blank"
+	if not ui.images[path] then
+		ui.images[path] = love.graphics.newImage("assets/images/"..path..".png")
+	end
+	return ui.images[path]
 end
 
 function ui.lighten(r,g,b,amt)
@@ -69,6 +80,18 @@ end
 function ui.getAbsPos(obj)
 	return ui.getAbsX(obj), ui.getAbsY(obj)
 end
+function ui.getRadioGroup(group)
+	local group = group or "_ALL"
+	if group ~= "_ALL" then
+		for i, v in pairs( ui.roots ) do
+			for k, z in pairs( v.children ) do
+				if z.type and z.type == "radio" and z.active and z.group == group then
+					return z
+				end
+			end
+		end
+	end
+end
 
 function ui.new(data)
 	return ui.elements.panel:new(data)
@@ -88,7 +111,6 @@ end
 
 function ui.mousepressed( x, y, button )
 	for i, v in pairs( ui.roots ) do
-		print( i, v )
 		if v.mousepressed then v:mousepressed(x, y, button) end
 	end
 end

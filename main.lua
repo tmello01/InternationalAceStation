@@ -24,9 +24,9 @@ card = require "assets/card"
 deck = require "assets/deck"
 deckTemplate = require "assets/deckTemplate"
 cardTemplate = require "assets/cardTemplate"
+utf8 = require "utf8"
 local Windows = love.system.getOS() == "Windows"
 
---end networking variables
 
 ui.state = "Menu"
 --Creates table for server information, to be used by servercreate.lua
@@ -47,6 +47,27 @@ Game = {
 		Shuffle = love.graphics.newImage("assets/images/shuffle.png"),
 		Split = love.graphics.newImage("assets/images/split.png")
 	},
+	Sounds = {
+		ButtonForward = love.audio.newSource("assets/sounds/button-forward.wav"),
+		ButtonBackward = love.audio.newSource("assets/sounds/button-backward.wav"),
+		ButtonNew = love.audio.newSource("assets/sounds/button-high.wav"),
+		CardPlace = {
+			love.audio.newSource("assets/sounds/cardPlace1.wav"),
+			love.audio.newSource("assets/sounds/cardPlace2.wav"),
+			love.audio.newSource("assets/sounds/cardPlace3.wav"),
+			love.audio.newSource("assets/sounds/cardPlace4.wav"),
+		},
+		CardSlide = {
+			love.audio.newSource("assets/sounds/cardSlide1.wav"),
+			love.audio.newSource("assets/sounds/cardSlide2.wav"),
+			love.audio.newSource("assets/sounds/cardSlide3.wav"),
+			love.audio.newSource("assets/sounds/cardSlide4.wav"),
+			love.audio.newSource("assets/sounds/cardSlide5.wav"),
+			love.audio.newSource("assets/sounds/cardSlide6.wav"),
+			love.audio.newSource("assets/sounds/cardSlide7.wav"),
+			love.audio.newSource("assets/sounds/cardSlide8.wav"),
+		},
+	},
 	Scale = {
 		x = 1280/love.graphics.getWidth(),
 		y = 720/love.graphics.getHeight()
@@ -64,6 +85,45 @@ for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) )
 	end
 end
 
+
+DeckPresets = {
+	Standard52Deck = {
+		diamonds = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+		spades = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+		hearts = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+		clubs = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+	},
+	SpadesOnly = {
+		spades = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+	},
+	ClubsOnly = {
+		clubs = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+	},
+	HeartsOnly = {
+		hearts = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+	},
+	DiamondsOnly = {
+		diamonds = {
+			"2", "3", "4", "5", "6", "7", "8", "9", "10", "j", "q", "k", "a",
+		},
+	},
+}
+
+
 WindowsTouchID = os.clock()
 
 --Random useful functions--
@@ -72,12 +132,38 @@ function hex2rgb(hex)
     hex = hex:gsub("#","")
     return {tonumber("0x"..hex:sub(1,2)), tonumber("0x"..hex:sub(3,4)), tonumber("0x"..hex:sub(5,6))}
 end
+function string.split (str, sep) -- Split string
+	local return_array = {}
+	for v in string.gmatch(str, "([^"..sep.."]+)") do
+		return_array[#return_array+1] = v
+	end
+	return return_array
+end
+function string.fromHex (str) -- FF32FF32 -> string
+	local nStr = ""
+	for i=1, #str/2 do
+		local nDex = (i-1)*2
+		local nnStr = string.char(tonumber(str:sub(nDex+1,nDex+2),16))
+		nStr=nStr..nnStr
+	end
+	return nStr
+end
+
+--Load font awesome dictionary
+dictionaryContents = require("fontAwesome") -- Place in the dictionary or load it from a file. Whichever works best.
+dictLines = string.split(dictionaryContents,"\n") -- You can get a string splitting function from stack overflow for lua.
+fontAwesome = {}
+for i=1, #dictLines do
+	local lineSplit = string.split(dictLines[i],":")
+	fontAwesome[lineSplit[1]]=string.fromHex(lineSplit[2])
+end
+
+
 
 love.graphics.setBackgroundColor( hex2rgb("#2E7D32") )
 
 function love.load()
 	
-
 	makeMenus()
 
 	Tweens = {
@@ -87,6 +173,12 @@ function love.load()
 			},
 			HideAdminPanel = {
 				x = love.graphics.getWidth()*.75
+			},
+			ShowCharmsPanel = {
+				x = -75,
+			},
+			HideCharmsPanel = {
+				x = 0,
 			}
 		}
 	}
@@ -107,13 +199,28 @@ function love.load()
 				Tweens.Data.HideAdminPanel.x = 0
 				AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
 			end,
+		},
+		ShowCharmsPanel = {
+			active = false,
+			t = tween.new(0.4, Tweens.Data.ShowCharmsPanel, {x=0}, "inOutExpo"),
+			oncomplete = function()
+				Tweens.Data.ShowCharmsPanel.x = 0
+			end
+		},
+		HideCharmsPanel = {
+			active = false,
+			t = tween.new(0.4, Tweens.Data.HideCharmsPanel, {x=-75}, "inOutExpo"),
+			oncomplete = function()
+				Tweens.Data.HideCharmsPanel.x = 0
+
+				SHOWCHARMS = false
+			end
 		}
 	}
 
 end
 
 function love.update( dt )
-
 
 	ui.update( dt )
 	if Windows then
@@ -156,13 +263,26 @@ function love.keypressed( key )
 end
 function love.draw()
 	if SHOWCHARMS then
+		local x = 0
+		if Tweens.Final.ShowCharmsPanel.active then
+			x = Tweens.Data.ShowCharmsPanel.x
+		elseif Tweens.Final.HideCharmsPanel.active then
 
+			print("Test")
+			x = Tweens.Data.HideCharmsPanel.x
+		end
 		love.graphics.setColor(42, 42, 42)
-		love.graphics.rectangle("fill", 0, 0, 75, love.graphics.getHeight())
+		love.graphics.rectangle("fill", x, 0, 75, love.graphics.getHeight())
 		love.graphics.setColor(255, 255, 255)
-		love.graphics.draw( Game.Images.Trash, 15, 15, 0, 0.5, 0.5 )
-		love.graphics.draw( Game.Images.Shuffle, 15, love.graphics.getHeight()/2-25, 0, 0.5, 0.5 )
-		love.graphics.draw( Game.Images.Split, 15, love.graphics.getHeight() - 115, 0, 0.5, 0.5 )
+		love.graphics.setFont(ui.font(50, "FontAwesome"))
+		love.graphics.print(fontAwesome['fa-trash-o'], 15+x, 15 )
+		if SHOWDECKCHARMS then
+			love.graphics.print(fontAwesome['fa-random'], 15+x, love.graphics.getHeight()/2-35)
+			love.graphics.print(fontAwesome['fa-arrows-h'], 15+x, love.graphics.getHeight()-95)
+		end
+		--love.graphics.draw( Game.Images.Trash, 15, 15, 0, 0.5, 0.5 )
+		--love.graphics.draw( Game.Images.Shuffle, 15, love.graphics.getHeight()/2-25, 0, 0.5, 0.5 )
+		--love.graphics.draw( Game.Images.Split, 15, love.graphics.getHeight() - 115, 0, 0.5, 0.5 )
 	end
 	for i, v in pairs( Game.Objects ) do
 		if v.draw then v:draw() end

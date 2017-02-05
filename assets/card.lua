@@ -77,6 +77,9 @@ local card = {
 				flipped = self.flipped
 			})
 			deck:new({x = self.x, y = self.y, cards=cards})
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardPlace[sound]:stop()
+			Game.Sounds.CardPlace[sound]:play()
 			for i, v in pairs( cardsToStack ) do
 				v:remove()
 			end
@@ -99,10 +102,29 @@ local card = {
 		end
 	end,
 	drag = function( self, x, y )
+		if not self.dragged then
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardSlide[sound]:stop()
+			Game.Sounds.CardSlide[sound]:play()
+
+		end
 		self.dragged = true
 		self.x = x-self.dragx
 		self.y = y-self.dragy
-		SHOWCHARMS = true
+		if self.x < love.graphics.getWidth()/4 then
+			if not SHOWCHARMS then
+				SHOWCHARMS = true
+				SHOWDECKCHARMS = false
+				Tweens.Final.HideCharmsPanel.t:reset()
+				Tweens.Final.ShowCharmsPanel.active = true
+				Tweens.Final.HideCharmsPanel.active = false
+			end
+		else
+			SHOWDECKCHARMS = false
+
+			Tweens.Final.ShowCharmsPanel.active = false
+			Tweens.Final.HideCharmsPanel.active = true
+		end
 	end,
 	update = function( self, dt )
 		if self.visible then
@@ -141,13 +163,19 @@ local card = {
 	end,
 	endTouch = function( self, id )
 		if self.touched then
-			SHOWCHARMS = false
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardSlide[sound]:stop()
+			Game.Sounds.CardSlide[sound]:play()
 			self.tapTimer:stop()
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
 			local w = Game.Images.Trash:getWidth()
+
+			Tweens.Final.ShowCharmsPanel.active = false
+			Tweens.Final.HideCharmsPanel.active = true
 			if self.dragged then
+
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					self:remove()
 					SHOWCHARMS = false
@@ -187,7 +215,7 @@ function card:new( data )
 		self.tweentox = self.tweentox or self.x
 		self.tweentoy = self.tweentoy or self.y
 		self.tweento = true
-		self.tweentotween = tween.new(0.5, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
+		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
 	end
 
 	table.insert( Game.Objects, self )

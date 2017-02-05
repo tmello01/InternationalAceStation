@@ -47,10 +47,12 @@ local card = {
 						table.insert( cards, {
 							suit = v.suit,
 							value = v.value,
-							flipped = v.flipped
+							flipped = v.flipped,
+							deckgroup = v.deckgroup
 						})
 					else
 						for i, z in pairs( v.cards ) do
+							z.deckgroup = z.deckgroup or self.deckgroup
 							table.insert( cards, z )
 						end
 					end
@@ -59,6 +61,7 @@ local card = {
 						suit = self.suit or "any",
 						value = self.value or "any",
 						flipped = self.flipped,
+						deckgroup = self.deckgroup
 					})
 					deckTemplate:new({
 						x = avgx,
@@ -165,9 +168,9 @@ local card = {
 card.__index = card
 
 function card:new( data )
-	print( "[card] Making new card..." )
+	print( "[cardTemplate] Making new card..." )
 	local data = data or { }
-	local self = setmetatable(data, card)
+	local self = setmetatable(data, cardTemplate)
 	self.__index = self
 	
 	table.insert( Game.Objects, self )

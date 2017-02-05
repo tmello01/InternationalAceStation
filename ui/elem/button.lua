@@ -32,7 +32,7 @@ function button:new(data, parent)
 	self.parent = parent or error("Button object needs a parent!")
 	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(16) end
-
+	self.sound = self.sound or Game.Sounds.ButtonForward
 	table.insert(parent.children,self)
 	return self
 end
@@ -98,6 +98,8 @@ function button:mousereleased( x, y, button )
 		if x >= ax and x <= ax + self.w and y >= ay and y <= ay + self.h then
 			if self.selected then
 				if self.onclick then self.onclick() end
+				self.sound:stop()
+				self.sound:play()
 				self.selected = false
 			end
 		end

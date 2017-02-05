@@ -1,6 +1,8 @@
 local DeckWidth = 38
 local DeckHeight = 61
 
+--ADD DECK GROUPS SO THAT A SPLIT DECK FROM THE MAIN WILL STILL CARRY THE MAIN DECK's PROPERTIES!
+
 local function checkCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 	return x1 < x2+w2 and
 		x2 < x1+w1 and
@@ -20,7 +22,7 @@ local function shuffleTable( t )
     end
 end
 
-local deck = {
+local deckTemplate = {
 	x = 0,
 	y = 0,
 	w = DeckWidth,
@@ -32,6 +34,7 @@ local deck = {
 	dragged = false, --If card is being dragged or not
 	visible = true,
 	touched = false,
+	shuffled = false,
 	startdx = -1,
 	startdy = -1,
 	locked,
@@ -53,20 +56,24 @@ local deck = {
 						table.insert( cards, {
 							suit = v.suit,
 							value = v.value,
-							flipped = v.flipped
+							flipped = v.flipped,
+							deckgroup = self.deckgroup
 						})
-						for i, v in pairs( self.cards ) do
-							table.insert( cards, v )
+						for i, z in pairs( self.cards ) do
+							z.deckgroup = z.deckgroup or self.deckgroup
+							table.insert( cards, z )
 						end
 					else
-						for i, v in pairs( v.cards ) do
-							table.insert( cards, v )
+						for i, z in pairs( v.cards ) do
+							z.deckgroup = z.deckgroup or self.deckgroup
+							table.insert( cards, z )
 						end
-						for i, v in pairs( self.cards ) do
-							table.insert( cards, v )
+						for i, z in pairs( self.cards ) do
+							z.deckgroup = z.deckgroup or self.deckgroup
+							table.insert( cards, z )
 						end
 					end
-					local newdeck = deck:new({
+					local newdeck = deckTemplate:new({
 						x = avgx,
 						y = avgy,
 						cards = cards,
@@ -88,6 +95,7 @@ local deck = {
 				x = self.x + self.w + 25,
 				y = self.y,
 				flipped = c.flipped,
+				deckgroup = self.deckgroup,
 			})
 			for i, v in pairs( self.cards ) do
 				if v == c then
@@ -108,6 +116,7 @@ local deck = {
 					x = self.x + self.w/2 + 10,
 					y = self.y,
 					flipped = c1.flipped,
+					deckgroup = self.deckgroup,
 				})
 				cardTemplate:new({
 					suit = c2.suit or "any",
@@ -115,6 +124,7 @@ local deck = {
 					x = self.x - self.w/2 - 10,
 					y = self.y,
 					flipped = c2.flipped,
+					deckgroup = self.deckgroup,
 				})
 				self:remove()
 				return
@@ -214,7 +224,7 @@ local deck = {
 						local c1 = self.cards[1]
 						cardTemplate:new({value=c1.value,suit=c1.suit,x=self.startdx-DeckWidth,y=self.startdy,flipped=c1.flipped})
 						table.remove(self.cards, 1)
-						deck:new({cards=self.cards,x=self.startdx+DeckWidth,y=self.startdy})
+						deckTemplate:new({cards=self.cards,x=self.startdx+DeckWidth,y=self.startdy})
 						self:remove()
 						return
 					end
@@ -228,8 +238,8 @@ local deck = {
 							table.insert( d2, v )
 						end
 					end
-					deck:new({cards=d1,x=self.startdx-DeckWidth,y=self.startdy})
-					deck:new({cards=d2,x=self.startdx+DeckWidth,y=self.startdy})
+					deckTemplate:new({cards=d1,x=self.startdx-DeckWidth,y=self.startdy})
+					deckTemplate:new({cards=d2,x=self.startdx+DeckWidth,y=self.startdy})
 					self:remove()
 					return
 				end
@@ -254,26 +264,19 @@ local deck = {
 		end
 	end,
 }
-deck.__index = deck
+deckTemplate.__index = deckTemplate
 
-function deck:new( data )
-	print( "[deck] Making new deck..." )
+function deckTemplate:new( data )
+	print( "[deckTemplate] Making new deck..." )
 	local data = data or { }
-	local self = setmetatable(data, deck)
+	local self = setmetatable(data, deckTemplate)
 	self.tweenback = false
 	self.__index = self
-	
+	self.deckgroup = os.time()
 	table.insert( Game.Objects, self )
+	--insert a deckgroup or something--
 	
 	return self
 end
 
-function deck:newTemplate( data )
-	print("[deck] Creating new deck template")
-	local data = data or {}
-	local self = setmetatable(data, deck)
-	self.istemplate = true
-	self.__index = self
-end
-
-return deck
+return deckTemplate

@@ -83,6 +83,9 @@ local deck = {
 				v:remove()
 			end
 			newdeck = deck:new({cards=cards, x = self.x, y=self.y})
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardPlace[sound]:stop()
+			Game.Sounds.CardPlace[sound]:play()
 			self:remove()
 			return
 		end
@@ -145,14 +148,27 @@ local deck = {
 		end
 	end,
 	drag = function( self, x, y )
-		SHOWCHARMS = true
 		if not self.dragged then
+			Game.Sounds.CardSlide[love.math.random(1,4)]:play()
 			self.startdx = self.x
 			self.startdy = self.y
 		end
 		self.dragged = true
 		self.x = x-self.dragx
 		self.y = y-self.dragy
+		if self.x < love.graphics.getWidth()/4 then
+			if not SHOWCHARMS then
+				SHOWCHARMS = true
+				SHOWDECKCHARMS = true
+				Tweens.Final.HideCharmsPanel.t:reset()
+				Tweens.Final.ShowCharmsPanel.active = true
+				Tweens.Final.HideCharmsPanel.active = false
+			end
+		else
+
+			Tweens.Final.ShowCharmsPanel.active = false
+			Tweens.Final.HideCharmsPanel.active = true
+		end
 	end,
 	update = function( self, dt )
 		if self.visible then
@@ -200,22 +216,23 @@ local deck = {
 	end,
 	endTouch = function( self, id )
 		if self.touched then
-			SHOWCHARMS = false
 			self.tapTimer:stop()
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
 			local w = Game.Images.Trash:getWidth()
 			if self.dragged then
+				Tweens.Final.ShowCharmsPanel.active = false
+				Tweens.Final.HideCharmsPanel.active = true
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					self:remove()
-					SHOWCHARMS = false
 				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()/2-25 and self.y <= love.graphics.getHeight()/2-25 + w then
 					shuffleTable(self.cards)
 
 					self.gotostart = tween.new(0.3, self, {x = self.startdx, y = self.startdy}, "inOutExpo")
 					self.tweenback = true
 				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()-115 and self.y <= love.graphics.getHeight() -15 then
+					Game.Sounds.CardSlide[love.math.random(5,8)]:play()
 					if #self.cards == 2 then
 						local c1 = self.cards[1]
 						local c2 = self.cards[2]
@@ -256,6 +273,7 @@ local deck = {
 					return
 				end
 			end
+			Game.Sounds.CardSlide[love.math.random(1,4)]:play()
 			self.dragged = false
 			self.held = false
 			self.touched = false
@@ -288,7 +306,7 @@ function deck:new( data )
 		self.tweentox = self.tweentox or self.x
 		self.tweentoy = self.tweentoy or self.y
 		self.tweento = true
-		self.tweentotween = tween.new(0.5, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
+		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
 	end
 	table.insert( Game.Objects, self )
 	

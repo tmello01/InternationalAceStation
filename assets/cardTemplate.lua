@@ -7,11 +7,18 @@ local function checkCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 		y1 < y2+h2 and
 		y2 < y1+h1
 end
+local function ReverseTable(t)
+    local reversedTable = {}
+    local itemCount = #t
+    for k, v in ipairs(t) do
+        reversedTable[itemCount + 1 - k] = v
+    end
+    return reversedTable
+end
 
-
-
-local card = {
+local cardTemplate = {
 	suit = "any",
+	value = "any",
 	--texture = Textures['diamond/1.png'],
 	x = 0,
 	y = 0,
@@ -22,57 +29,67 @@ local card = {
 	dragy = 0, --Drag Y position
 	dragged = false, --If card is being dragged or not
 	inDeck = false, --Possibly defunct
+	istemplate = true,
 	inhand = false,
-	isTemplate = true,
+	tweento = false,
 	visible = true,
 	firstTouchID = -1,
 	lastTouchID = 1,
 	currentTouchID = -1,
 	touched = false,
 	held = false,
-	type = "card",
+	type = "cardTemplate",
 	tapTimer = timer.new(0.5),
 	getPosition = function( self )
 		return self.x, self.y
 	end,
 	onHold = function( self )
-		for i, v in pairs( Game.Objects ) do
-			if v ~= self then
-				if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
-					--Create a deck--
-					local avgx = (self.x + v.x)/2
-					local avgy = (self.y + v.y)/2
-					local cards = {}
-					if v.type == "card" then
-						table.insert( cards, {
-							suit = v.suit,
-							value = v.value,
-							flipped = v.flipped,
-							deckgroup = v.deckgroup
-						})
-					else
-						for i, z in pairs( v.cards ) do
-							z.deckgroup = z.deckgroup or self.deckgroup
-							table.insert( cards, z )
-						end
-					end
 
-					table.insert( cards, {
-						suit = self.suit or "any",
-						value = self.value or "any",
-						flipped = self.flipped,
-						deckgroup = self.deckgroup
-					})
-					deckTemplate:new({
-						x = avgx,
-						y = avgy,
-						cards = cards,
-					})
-					table.remove( Game.Objects, i )
-					self:remove()
-					return
+		local cardsToStack = {}
+		for i, v in pairs( Game.Objects ) do
+			if v ~= self and v.type ~= "deckgroup" then
+				if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
+					table.insert( cardsToStack, v )
 				end
 			end
+		end
+		if #cardsToStack > 0 then
+			local cards = {} --a table to pass to the new deck
+			for i, v in pairs( cardsToStack ) do
+				if v.type == "cardTemplate" then
+					table.insert( cards, {
+						suit = v.suit,
+						value = v.value,
+						flipped = v.flipped,
+						deckgroup = v.deckgroup
+					})
+				elseif v.type == "deckTemplate" then
+					for k, z in pairs( v.cards ) do
+						table.insert( cards, { 
+							suit = z.suit,
+							value = z.value,
+							flipped = z.flipped,
+							deckgroup = z.deckgroup,
+						})
+					end
+				end
+			end
+			table.insert( cards, {
+				value = self.value,
+				suit = self.suit,
+				flipped = self.flipped,
+				deckgroup = self.deckgroup,
+			})
+			print("new deck:",table.serialize(cards))
+			deckTemplate:new({x = self.x, y = self.y, cards=cards})
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardPlace[sound]:stop()
+			Game.Sounds.CardPlace[sound]:play()
+			for i, v in pairs( cardsToStack ) do
+				v:remove()
+			end
+			self:remove()
+			return
 		end
 	end,
 	onSingleTap = function( self ) --What happens when the user taps once
@@ -90,10 +107,29 @@ local card = {
 		end
 	end,
 	drag = function( self, x, y )
+		if not self.dragged then
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardSlide[sound]:stop()
+			Game.Sounds.CardSlide[sound]:play()
+
+		end
 		self.dragged = true
 		self.x = x-self.dragx
 		self.y = y-self.dragy
-		SHOWCHARMS = true
+		if self.x < love.graphics.getWidth()/4 then
+			if not SHOWCHARMS then
+				SHOWCHARMS = true
+				SHOWDECKCHARMS = false
+				Tweens.Final.HideCharmsPanel.t:reset()
+				Tweens.Final.ShowCharmsPanel.active = true
+				Tweens.Final.HideCharmsPanel.active = false
+			end
+		else
+			SHOWDECKCHARMS = false
+
+			Tweens.Final.ShowCharmsPanel.active = false
+			Tweens.Final.HideCharmsPanel.active = true
+		end
 	end,
 	update = function( self, dt )
 		if self.visible then
@@ -104,18 +140,23 @@ local card = {
 					self.tapTimer:stop()
 				end
 			end
+			if self.tweento then
+				if self.tweentotween:update( dt ) then
+					self.tweento = false
+				end
+			end
 		end
 	end,
 	draw = function( self )
 		if self.visible then
-			if self.flipped then
-				love.graphics.draw( Cards.backs.earth, self.x, self.y, 0, 2, 2 )
-			else
-				if self.suit == "any" then
-					love.graphics.draw( Cards.backs.blank, self.x, self.y, 0, 2, 2 )
-				else
+			if not self.flipped then
+				if self.suit ~= "any" then
 					love.graphics.draw( Cards[self.suit][self.value], self.x, self.y, 0, 2, 2 )
+				else
+					love.graphics.draw( Cards.backs.blank, self.x, self.y, 0, 2, 2 )
 				end
+			else
+				love.graphics.draw( Cards.backs.earth, self.x, self.y, 0, 2, 2 )
 			end
 		end
 	end,
@@ -131,13 +172,19 @@ local card = {
 	end,
 	endTouch = function( self, id )
 		if self.touched then
-			SHOWCHARMS = false
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardSlide[sound]:stop()
+			Game.Sounds.CardSlide[sound]:play()
 			self.tapTimer:stop()
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
-			local w = Game.Images.Trash:getWidth()
+			local w = 75
+
+			Tweens.Final.ShowCharmsPanel.active = false
+			Tweens.Final.HideCharmsPanel.active = true
 			if self.dragged then
+
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					self:remove()
 					SHOWCHARMS = false
@@ -165,17 +212,26 @@ local card = {
 		end
 	end,
 }
-card.__index = card
+cardTemplate.__index = cardTemplate
 
-function card:new( data )
-	print( "[cardTemplate] Making new card..." )
+function cardTemplate:new( data )
+	print( "[cardTemplate] Making new cardTemplate..." )
 	local data = data or { }
 	local self = setmetatable(data, cardTemplate)
 	self.__index = self
 	
+	if self.tweentox or self.tweentoy then
+		self.tweentox = self.tweentox or self.x
+		self.tweentoy = self.tweentoy or self.y
+		self.tweento = true
+		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
+	end
+
 	table.insert( Game.Objects, self )
 	
+
+
 	return self
 end
 
-return card
+return cardTemplate

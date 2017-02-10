@@ -25,12 +25,11 @@ textinput.__index = textinput
 function textinput:new( data, parent )
 	local data = data or {}
 	local self = setmetatable(data, textinput)
-	self.__index = self
 	self.parent = parent or error("Textinput needs a parent object")
 	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(26) end
 
-	table.insert(self.parent.children, self)
+	table.insert(parent.children, self)
 	return self
 end
 
@@ -97,26 +96,29 @@ function textinput:mousepressed( x, y, button )
 	end
 end
 
-function textinput:textinput(input)
-	if ui.checkState(self) then
-		print(#self.text, self.maxlength)
-	end
+function textinput:input(i)
 	if ui.checkState( self ) and self.active and (#self.text < self.maxlength or self.maxlength < 0) then
-		self.text = self.text .. input
-		return
+		--print("Text: " .. i)
+		print( self.placeholder )
+		self.text = self.text .. i
+		--print( input )
+		if self.onchange then self.onchange() end
+		return true
 	end
+	return false
 end
 
 function textinput:keypressed(key)
 	if ui.checkState( self ) and self.active then
 		if key == "backspace" then
 			self.text = self.text:sub(1, -2)
+			if self.onchange then self.onchange() end
 		elseif key == "return" then
 			self.active = false
 			if self.onreturn then self.onreturn() end
 			love.keyboard.setTextInput( false )
 		end
-		return
+		return true
 	end
 end
 

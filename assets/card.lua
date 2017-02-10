@@ -89,6 +89,7 @@ local card = {
 	end,
 	onSingleTap = function( self ) --What happens when the user taps once
 		self.flipped = not self.flipped
+		print(self.suit, self.value)
 	end,
 	onDoubleTap = function( self ) --What happens when the user taps twice
 		
@@ -145,6 +146,9 @@ local card = {
 	draw = function( self )
 		if self.visible then
 			if not self.flipped then
+				if not Cards[self.suit][self.value] then
+					print( self.suit, self.value )
+				end
 				love.graphics.draw( Cards[self.suit][self.value], self.x, self.y, 0, 2, 2 )
 			else
 				love.graphics.draw( Cards.backs.earth, self.x, self.y, 0, 2, 2 )
@@ -170,7 +174,7 @@ local card = {
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
-			local w = Game.Images.Trash:getWidth()
+			local w = 75
 
 			Tweens.Final.ShowCharmsPanel.active = false
 			Tweens.Final.HideCharmsPanel.active = true
@@ -217,9 +221,9 @@ function card:new( data )
 		self.tweento = true
 		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
 	end
-
 	table.insert( Game.Objects, self )
 	
+	self:topDrawOrder()
 
 
 	return self

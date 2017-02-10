@@ -41,9 +41,11 @@ function t:new( id, x, y )
 	self.pastDeadzone = false
 	table.insert( touches, self )
 	for i, v in pairs( ReverseTable(Game.Objects) ) do
-		if x >= v.x and x <= v.x + (v.w*2) and y >= v.y and y <= v.y + (v.h*2) then
-			v:startTouch(id,x,y)
-			break
+		if v.type ~= "deckgroup" then
+			if x >= v.x and x <= v.x + (v.w*2) and y >= v.y and y <= v.y + (v.h*2) then
+				v:startTouch(id,x,y)
+				break
+			end
 		end
 	end
 	return self
@@ -55,7 +57,7 @@ end
 
 function t:updatePosition( x, y )
 	if x ~= self.x or y ~= self.y then
-		local deadzone = 10 * (love.graphics.getWidth()/800)
+		local deadzone = 5 * (love.graphics.getWidth()/800)
 		if not self.pastDeadzone then
 			self.pastDeadzone = math.abs(x-self.x) > deadzone or math.abs(y-self.y) > deadzone
 		else	

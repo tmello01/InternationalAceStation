@@ -1,8 +1,6 @@
 local DeckWidth = 38
 local DeckHeight = 61
 
---ADD DECK GROUPS SO THAT A SPLIT DECK FROM THE MAIN WILL STILL CARRY THE MAIN DECK's PROPERTIES!
-
 local function checkCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 	return x1 < x2+w2 and
 		x2 < x1+w1 and
@@ -27,62 +25,73 @@ local deckTemplate = {
 	y = 0,
 	w = DeckWidth,
 	h = DeckHeight,
-	istemplate = false,
+	istemplate = true,
 	visible = true,
 	dragx = 0, --Drag X position
 	dragy = 0, --Drag Y position
 	dragged = false, --If card is being dragged or not
 	visible = true,
 	touched = false,
-	shuffled = false,
+	tweento = false,
 	startdx = -1,
 	startdy = -1,
 	locked,
 	inhand = false,
+	shuffled = false,
 	held = false,
-	type = "deck",
+	type = "deckTemplate",
 	tapTimer = timer.new(0.5),
 	getPosition = function( self )
 		return self.x, self.y
 	end,
 	onHold = function( self )
+		local cardsToStack = {}
 		for i, v in pairs( Game.Objects ) do
-			if v ~= self then
+			if v ~= self and v.type ~= "deckgroup" then
 				if checkCollision(self.x, self.y, self.w, self.h,  v.x, v.y, v.w, v.h) then
-					local avgx = (self.x + v.x)/2
-					local avgy = (self.y + v.y)/2
-					local cards = {}
-					if v.type == "card" then
-						table.insert( cards, {
-							suit = v.suit,
-							value = v.value,
-							flipped = v.flipped,
-							deckgroup = self.deckgroup
-						})
-						for i, z in pairs( self.cards ) do
-							z.deckgroup = z.deckgroup or self.deckgroup
-							table.insert( cards, z )
-						end
-					else
-						for i, z in pairs( v.cards ) do
-							z.deckgroup = z.deckgroup or self.deckgroup
-							table.insert( cards, z )
-						end
-						for i, z in pairs( self.cards ) do
-							z.deckgroup = z.deckgroup or self.deckgroup
-							table.insert( cards, z )
-						end
-					end
-					local newdeck = deckTemplate:new({
-						x = avgx,
-						y = avgy,
-						cards = cards,
-					})
-					table.remove( Game.Objects, i )
-					self:remove()
-					break
+					table.insert( cardsToStack, v )
 				end
 			end
+		end
+		if #cardsToStack > 0 then
+			local cards = {}
+			for i, v in pairs( cardsToStack ) do
+				if v.type == "cardTemplate" then
+					table.insert( cards, {
+						suit = v.suit,
+						value = v.value,
+						flipped = v.flipped,
+						deckgroup = self.deckgroup,
+					})
+				elseif v.type == "deckTemplate" then
+					for k, z in pairs( v.cards ) do
+						table.insert( cards, {
+							suit = z.suit,
+							value = z.value,
+							flipped = z.flipped,
+							deckgroup = self.deckgroup
+						})
+					end
+				end
+			end
+			for i, v in pairs( self.cards ) do
+				table.insert( cards, {
+					suit = v.suit,
+					value = v.value,
+					flipped = v.flipped,
+					deckgroup = self.deckgroup
+				})
+			end
+			print(table.serialize( cards ) )
+			for i, v in pairs( cardsToStack ) do
+				v:remove()
+			end
+			newdeck = deckTemplate:new({cards=cards, x = self.x, y=self.y})
+			local sound = love.math.random(1,4)
+			Game.Sounds.CardPlace[sound]:stop()
+			Game.Sounds.CardPlace[sound]:play()
+			self:remove()
+			return
 		end
 	end,
 	onSingleTap = function( self ) --What happens when the user taps once
@@ -90,12 +99,13 @@ local deckTemplate = {
 			--Drop card
 			local c = self.cards[#self.cards] --the card we're dropping
 			local newcard = cardTemplate:new({
-				suit = c.suit or "any",
-				value = c.value or "any",
-				x = self.x + self.w + 25,
+				suit = c.suit,
+				value = c.value,
+				x = self.x,
 				y = self.y,
 				flipped = c.flipped,
 				deckgroup = self.deckgroup,
+				tweentox = self.x + self.w + 50,
 			})
 			for i, v in pairs( self.cards ) do
 				if v == c then
@@ -111,20 +121,21 @@ local deckTemplate = {
 			print( table.serialize( self.cards ) )
 			if c1 and c2 then
 				cardTemplate:new({
-					suit = c1.suit or "any",
-					value = c1.value or "any",
-					x = self.x + self.w/2 + 10,
+					suit = c1.suit,
+					value = c1.value,
+					x = self.x,
 					y = self.y,
-					flipped = c1.flipped,
 					deckgroup = self.deckgroup,
+					flipped = c1.flipped,
 				})
 				cardTemplate:new({
-					suit = c2.suit or "any",
-					value = c2.value or "any",
-					x = self.x - self.w/2 - 10,
+					suit = c2.suit,
+					value = c2.value,
+					x = self.x,
 					y = self.y,
-					flipped = c2.flipped,
 					deckgroup = self.deckgroup,
+					flipped = c2.flipped,
+					tweentox = self.x + self.w + 50,
 				})
 				self:remove()
 				return
@@ -145,13 +156,26 @@ local deckTemplate = {
 	end,
 	drag = function( self, x, y )
 		if not self.dragged then
-			SHOWCHARMS = true
+			Game.Sounds.CardSlide[love.math.random(1,4)]:play()
 			self.startdx = self.x
 			self.startdy = self.y
 		end
 		self.dragged = true
 		self.x = x-self.dragx
 		self.y = y-self.dragy
+		if self.x < love.graphics.getWidth()/4 then
+			if not SHOWCHARMS then
+				SHOWCHARMS = true
+				SHOWDECKCHARMS = true
+				Tweens.Final.HideCharmsPanel.t:reset()
+				Tweens.Final.ShowCharmsPanel.active = true
+				Tweens.Final.HideCharmsPanel.active = false
+			end
+		else
+
+			Tweens.Final.ShowCharmsPanel.active = false
+			Tweens.Final.HideCharmsPanel.active = true
+		end
 	end,
 	update = function( self, dt )
 		if self.visible then
@@ -167,6 +191,11 @@ local deckTemplate = {
 					self.tweenback = false
 					self.startdx = -1
 					self.startdy = -1
+				end
+			end
+			if self.tweento then
+				if self.tweentotween:update( dt ) then
+					self.tweento = false
 				end
 			end
 		end
@@ -197,22 +226,23 @@ local deckTemplate = {
 	end,
 	endTouch = function( self, id )
 		if self.touched then
-			SHOWCHARMS = false
 			self.tapTimer:stop()
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
-			local w = Game.Images.Trash:getWidth()
+			local w = 75
 			if self.dragged then
+				Tweens.Final.ShowCharmsPanel.active = false
+				Tweens.Final.HideCharmsPanel.active = true
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					self:remove()
-					SHOWCHARMS = false
 				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()/2-25 and self.y <= love.graphics.getHeight()/2-25 + w then
 					shuffleTable(self.cards)
 
 					self.gotostart = tween.new(0.3, self, {x = self.startdx, y = self.startdy}, "inOutExpo")
 					self.tweenback = true
 				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()-115 and self.y <= love.graphics.getHeight() -15 then
+					Game.Sounds.CardSlide[love.math.random(5,8)]:play()
 					if #self.cards == 2 then
 						local c1 = self.cards[1]
 						local c2 = self.cards[2]
@@ -231,19 +261,29 @@ local deckTemplate = {
 					local half = math.ceil(#self.cards/2)
 					local d1 = {}
 					local d2 = {}
+					print( table.serialize(self.cards))
 					for i, v in pairs( self.cards ) do
 						if i <= half then
-							table.insert( d1, v )
+							table.insert( d1, {
+								value = v.value,
+								suit = v.suit,
+								flipped = v.flipped
+							})
 						else
-							table.insert( d2, v )
+							table.insert( d2, { 
+								value = v.value,
+								suit = v.suit,
+								flipped = v.flipped,
+							})
 						end
 					end
-					deckTemplate:new({cards=d1,x=self.startdx-DeckWidth,y=self.startdy})
-					deckTemplate:new({cards=d2,x=self.startdx+DeckWidth,y=self.startdy})
+					deckTemplate:new({cards=d1,x=self.x, y=self.y, tweentox = self.startdx-DeckWidth-2, tweentoy = self.startdy})
+					deckTemplate:new({cards=d2,x=self.x, y=self.y, tweentox = self.startdx+DeckWidth+2, tweentoy = self.startdy})
 					self:remove()
 					return
 				end
 			end
+			Game.Sounds.CardSlide[love.math.random(1,4)]:play()
 			self.dragged = false
 			self.held = false
 			self.touched = false
@@ -266,15 +306,38 @@ local deckTemplate = {
 }
 deckTemplate.__index = deckTemplate
 
+local function findDeckgroups(dg)
+	for i, v in pairs( Game.Objects ) do
+		if v.type == "deckgroup" and v.id == dg then
+			return true
+		end
+	end
+	return false
+end
+
 function deckTemplate:new( data )
-	print( "[deckTemplate] Making new deck..." )
+	print( "[deckTemplate] Making new deckTemplate..." )
 	local data = data or { }
 	local self = setmetatable(data, deckTemplate)
+	if not self.deckgroup then
+		local id = os.time()
+		self.deckgroup = id
+		deckgroupTemplate:new({id=id,preset=self.preset,shuffled = self.shuffled})
+	end
+	if not findDeckgroups(self.deckgroup) then
+
+		print("Didn't find a deckgroup")
+		deckgroupTemplate:new({id=self.deckgroup,preset=self.preset,shuffled = self.shuffled})
+	end
 	self.tweenback = false
 	self.__index = self
-	self.deckgroup = os.time()
+	if self.tweentox or self.tweentoy then
+		self.tweentox = self.tweentox or self.x
+		self.tweentoy = self.tweentoy or self.y
+		self.tweento = true
+		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
+	end
 	table.insert( Game.Objects, self )
-	--insert a deckgroup or something--
 	
 	return self
 end

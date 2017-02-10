@@ -15,6 +15,7 @@ local panel = {
 	children = { },
 	visible = true,
 	substate = "Main",
+	drawAboveObjects = false,
 }
 panel.__index = panel
 
@@ -87,14 +88,25 @@ end
 function panel:textinput( text )
 	if ui.checkState( self ) then
 		for i, v in pairs( self.children ) do
-			if v.textinput then v:textinput(text) end
+
+			if v.input then 
+				if v:input(text) then
+					return true
+				end
+			end
+
 		end
 	end
+	return false
 end
 function panel:keypressed( key )
 	if ui.checkState( self ) then
 		for i, v in pairs( self.children ) do
-			if v.keypressed then v:keypressed( key ) end
+			if v.keypressed then 
+				if v:keypressed( key ) then
+					return true
+				end
+			end
 		end
 	end
 end

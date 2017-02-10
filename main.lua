@@ -1,6 +1,21 @@
 --[=[
 
-	MAIN FILE
+	  _____       _                        _   _                   _ 
+	 |_   _|     | |                      | | (_)                 | |
+	   | |  _ __ | |_ ___ _ __ _ __   __ _| |_ _  ___  _ __   __ _| |
+	   | | | '_ \| __/ _ \ '__| '_ \ / _` | __| |/ _ \| '_ \ / _` | |
+	  _| |_| | | | ||  __/ |  | | | | (_| | |_| | (_) | | | | (_| | |
+	 |___/\|_| |_|\__\___|_|  |_| |_|\__,_|\__|_|\___/|_| |_|\__,_|_|
+	    /  \   ___ ___                                               
+	   / /\ \ / __/ _ \                                              
+	  / ____ \ (_|  __/                                              
+	 /_/____\_\___\___|   _                                          
+	  / ____| |      | | (_)                                         
+	 | (___ | |_ __ _| |_ _  ___  _ __                               
+	  \___ \| __/ _` | __| |/ _ \| '_ \                              
+	  ____) | || (_| | |_| | (_) | | | |                             
+	 |_____/ \__\__,_|\__|_|\___/|_| |_|                             
+                                       
 	---------
 
 	Special thanks to Simon Rahnasto for all his help. :)
@@ -9,82 +24,6 @@
 	Art by Armen Eghian, Justin Stevens, Dylan Ross, Lore Bellavance, and Alex Mullin	
 
 ]=]--
-
-
-
-require "ser"
-
-tween = require "tween"
-require "camera"
-timer = require "timer"
-touch = require "touch"
-ui = require "ui"
-require "menus"
-card = require "assets/card"
-deck = require "assets/deck"
-deckTemplate = require "assets/deckTemplate"
-cardTemplate = require "assets/cardTemplate"
-utf8 = require "utf8"
-local Windows = love.system.getOS() == "Windows"
-
-
-ui.state = "Menu"
---Creates table for server information, to be used by servercreate.lua
-
-SHOWCHARMS = false
-
-Game = {
-	Objects = {},
-	Zones = {},
-	Players = {},
-	Globals = {
-		Gamestate = "Table",
-		CardWidth = 38,
-		CardHeight = 61,
-	},
-	Images = {
-		Trash = love.graphics.newImage("assets/images/trash.png"),
-		Shuffle = love.graphics.newImage("assets/images/shuffle.png"),
-		Split = love.graphics.newImage("assets/images/split.png")
-	},
-	Sounds = {
-		ButtonForward = love.audio.newSource("assets/sounds/button-forward.wav"),
-		ButtonBackward = love.audio.newSource("assets/sounds/button-backward.wav"),
-		ButtonNew = love.audio.newSource("assets/sounds/button-high.wav"),
-		CardPlace = {
-			love.audio.newSource("assets/sounds/cardPlace1.wav"),
-			love.audio.newSource("assets/sounds/cardPlace2.wav"),
-			love.audio.newSource("assets/sounds/cardPlace3.wav"),
-			love.audio.newSource("assets/sounds/cardPlace4.wav"),
-		},
-		CardSlide = {
-			love.audio.newSource("assets/sounds/cardSlide1.wav"),
-			love.audio.newSource("assets/sounds/cardSlide2.wav"),
-			love.audio.newSource("assets/sounds/cardSlide3.wav"),
-			love.audio.newSource("assets/sounds/cardSlide4.wav"),
-			love.audio.newSource("assets/sounds/cardSlide5.wav"),
-			love.audio.newSource("assets/sounds/cardSlide6.wav"),
-			love.audio.newSource("assets/sounds/cardSlide7.wav"),
-			love.audio.newSource("assets/sounds/cardSlide8.wav"),
-		},
-	},
-	Scale = {
-		x = 1280/love.graphics.getWidth(),
-		y = 720/love.graphics.getHeight()
-	},
-	
-	getState = function() return Game.Globals.Gamestate end,
-}
-
-Cards = {}
-for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) ) do
-	Cards[v] = {}
-	for k, z in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" .. v ) ) do
-		Cards[v][z:sub(1,-5)] = love.graphics.newImage( "assets/images/cards/" .. v .. "/" .. z )
-		Cards[v][z:sub(1,-5)]:setFilter("nearest", "nearest")
-	end
-end
-
 
 DeckPresets = {
 	Standard52Deck = {
@@ -122,6 +61,290 @@ DeckPresets = {
 		},
 	},
 }
+
+require "ser"
+
+tween = require "tween"
+require "camera"
+timer = require "timer"
+touch = require "touch"
+ui = require "ui"
+require "menus"
+card = require "assets/card"
+deck = require "assets/deck"
+deckTemplate = require "assets/deckTemplate"
+cardTemplate = require "assets/cardTemplate"
+deckgroupTemplate = require "assets/deckgroup"
+utf8 = require "utf8"
+local Windows = love.system.getOS() == "Windows"
+
+local function shuffleTable( t )
+    local rand = math.random 
+    assert( t, "shuffleTable() expected a table, got nil" )
+    local iterations = #t
+    local j
+    
+    for i = iterations, 2, -1 do
+        j = rand(i)
+        t[i], t[j] = t[j], t[i]
+    end
+end
+
+ui.state = "Menu"
+--Creates table for server information, to be used by servercreate.lua
+
+SHOWCHARMS = false
+
+Game = {
+	Objects = {},
+	Zones = {},
+	Players = {},
+	Globals = {
+		Gamestate = "Table",
+		CardWidth = 38,
+		CardHeight = 61,
+	},
+	Identity = love.filesystem.getIdentity(),
+	Images = {},
+	Sounds = {
+		ButtonForward = love.audio.newSource("assets/sounds/button-forward.wav"),
+		ButtonBackward = love.audio.newSource("assets/sounds/button-backward.wav"),
+		ButtonNew = love.audio.newSource("assets/sounds/button-high.wav"),
+		CardPlace = {
+			love.audio.newSource("assets/sounds/cardPlace1.wav"),
+			love.audio.newSource("assets/sounds/cardPlace2.wav"),
+			love.audio.newSource("assets/sounds/cardPlace3.wav"),
+			love.audio.newSource("assets/sounds/cardPlace4.wav"),
+		},
+		CardSlide = {
+			love.audio.newSource("assets/sounds/cardSlide1.wav"),
+			love.audio.newSource("assets/sounds/cardSlide2.wav"),
+			love.audio.newSource("assets/sounds/cardSlide3.wav"),
+			love.audio.newSource("assets/sounds/cardSlide4.wav"),
+			love.audio.newSource("assets/sounds/cardSlide5.wav"),
+			love.audio.newSource("assets/sounds/cardSlide6.wav"),
+			love.audio.newSource("assets/sounds/cardSlide7.wav"),
+			love.audio.newSource("assets/sounds/cardSlide8.wav"),
+		},
+	},
+	Scale = {
+		x = 1280/love.graphics.getWidth(),
+		y = 720/love.graphics.getHeight()
+	},
+	
+	SaveTemplate = function( templateName )
+
+		if ui.state == "NewTemplate" then
+			local env = Game.Objects
+			local saveinfo = {
+				deckgroups = {},
+				decks = {},
+				cards = {},
+			}
+			for i, v in pairs( env ) do
+				if v.type == "deckgroup" then
+					table.insert( saveinfo.deckgroups, {
+						id = v.id,
+						preset = v.preset,
+						cards = v.cards,
+						allowrepeats = false,
+					})
+				elseif v.type == "deckTemplate" then
+					
+					local cards = {}
+					for k, z in pairs( v.cards ) do
+						table.insert( cards, {
+							suit = z.suit,
+							value = z.value,
+							flipped = z.flipped,
+							deckgroup = v.deckgroup
+						})
+					end
+					table.insert( saveinfo.decks, {
+						x = v.x,
+						y = v.y,
+						cards = cards,
+						deckgroup = v.deckgroup,
+					})
+				elseif v.type == "cardTemplate" then
+					table.insert( saveinfo.cards, {
+						x = v.x,
+						y = v.y,
+						suit = v.suit,
+						value = v.value,
+						flipped = v.flipped,
+						deckgroup = v.deckgroup
+					})
+				end
+			end
+			local templateName = templateName or "UntitledTemplate"
+			print("Saving to" .. "/templates/" .. templateName )
+			if not love.filesystem.isDirectory("/templates/") then
+				love.filesystem.createDirectory("/templates/")
+				print("created templates directory")
+			end
+			if not love.filesystem.isDirectory("/user/") then
+				print("created user directory")
+				love.filesystem.createDirectory("/user/")
+				love.filesystem.createDirectory("/user/templates/")
+			end
+			love.filesystem.write("/templates/"..templateName..".lua", table.serialize( saveinfo )) 
+		end
+	end,
+	LoadTemplate = function(template, toGame)
+		if love.filesystem.isFile("/templates/"..template..".lua") then
+
+			local templateData = love.filesystem.load("/templates/"..template..".lua")()
+
+			if not toGame then
+				--Loading template to be edited in the template builder--
+				local cardsToPlace = {}
+				for i, v in ipairs( templateData.cards ) do
+					local newcard = cardTemplate:new({
+						x = v.x,
+						y = v.y,
+						flipped = v.flipped,
+						suit = v.suit,
+						value = v.value,
+						deckgroup = v.deckgroup,
+					})
+					newcard:topDrawOrder()
+				end
+				for i, v in ipairs( templateData.decks ) do
+					deckTemplate:new({
+						x = v.x,
+						y = v.y,
+						cards = v.cards,
+						deckgroup = v.deckgroup
+					})
+				end
+			else
+				--Loading templated to be played with--
+				for _, deckgroup in pairs( templateData.deckgroups ) do
+					local cardsToPlace = {}
+					local suits = {
+						c = "clubs",
+						d = "diamonds",
+						h = "hearts",
+						s = "spades",
+						clubs = "c",
+						diamonds = "d",
+						hearts = "hearts",
+						spades = "spades",
+					}
+					for suitname, suit in pairs( deckgroup.preset ) do
+						for _, card in pairs( suit ) do
+							print(card)
+							table.insert(cardsToPlace, suitname:sub(1,1)..card)
+						end
+					end
+					--if deckgroup.shuffled then
+						shuffleTable(cardsToPlace)
+					--end
+
+					
+					for _, obj in ipairs( templateData.cards ) do
+						if obj.deckgroup == deckgroup.id then
+							local suit = obj.suit
+							local value = obj.value
+							local flipped = obj.flipped
+							local CardToRemove = 1
+							if suit == "any" then
+								suit = suits[cardsToPlace[1]:sub(1,1)]
+							else
+								for i=1, #cardsToPlace do
+									if cardsToPlace:sub(1,1) == suit then
+										suit = suits[cardsToPlace[i]:sub(1,1)]
+										CardToRemove = i
+										break
+									end
+								end
+							end
+							if value == "any" then
+								value = cardsToPlace[1]:sub(2,3)
+							else
+								for i=1, #cardsToPlace do
+									if cardsToPlace:sub(2,3) == value and cardsToPlace:sub(1,1) == suits[suit] then
+										CardToRemove = i
+										break
+									end
+								end
+							end
+							card:new({
+								x = obj.x,
+								y = obj.y,
+								suit = suit,
+								value = value,
+								flipped = flipped
+							})
+							card:topDrawOrder()
+							table.remove(cardsToPlace, CardToRemove)
+						end
+					end
+					for _, obj in ipairs( templateData.decks ) do
+						if obj.deckgroup == deckgroup.id then
+							--if deckgroup.shuffled then
+								shuffleTable(cardsToPlace)
+							--end
+							local cards = {}
+							for _, newcard in pairs( obj.cards ) do
+								local suit = newcard.suit
+								local value = newcard.value
+								local flipped = newcard.flipped
+								local CardToRemove = 1
+								if suit == "any" then
+									suit = suits[cardsToPlace[1]:sub(1,1)]
+								else
+									for i=1, #cardsToPlace do
+										if cardsToPlace:sub(1,1) == suit then
+											suit = suits[cardsToPlace[i]:sub(1,1)]
+											CardToRemove = i
+											break
+										end
+									end
+								end
+								if value == "any" then
+									value = cardsToPlace[1]:sub(2,3)
+								else
+									for i=1, #cardsToPlace do
+										if cardsToPlace:sub(2,3) == value and cardsToPlace:sub(1,1) == suits[suit] then
+											CardToRemove = i
+											break
+										end
+									end
+								end
+								table.insert( cards, {
+									suit = suit,
+									value = value,
+									flipped = flipped,
+								})
+								table.remove(cardsToPlace, CardToRemove)
+							end
+							deck:new({
+								x = obj.x,
+								y = obj.y,
+								cards = cards
+							})
+						end
+					end
+					print(table.serialize(cardsToPlace))
+				end
+			end
+
+		end
+	end,
+
+	getState = function() return Game.Globals.Gamestate end,
+}
+
+Cards = {}
+for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) ) do
+	Cards[v] = {}
+	for k, z in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" .. v ) ) do
+		Cards[v][z:sub(1,-5)] = love.graphics.newImage( "assets/images/cards/" .. v .. "/" .. z )
+		Cards[v][z:sub(1,-5)]:setFilter("nearest", "nearest")
+	end
+end
 
 
 WindowsTouchID = os.clock()
@@ -250,25 +473,17 @@ function love.update( dt )
 	end
 
 end
---don't judge
-function love.textinput( t )
-   ui.textinput( t )
-end
 
-function love.keyreleased( key )
-	ui.keyreleased( key )
-end
-function love.keypressed( key )
-	ui.keypressed( key )
-end
+
+
 function love.draw()
+
+	ui.draw()
 	if SHOWCHARMS then
 		local x = 0
 		if Tweens.Final.ShowCharmsPanel.active then
 			x = Tweens.Data.ShowCharmsPanel.x
 		elseif Tweens.Final.HideCharmsPanel.active then
-
-			print("Test")
 			x = Tweens.Data.HideCharmsPanel.x
 		end
 		love.graphics.setColor(42, 42, 42)
@@ -280,14 +495,23 @@ function love.draw()
 			love.graphics.print(fontAwesome['fa-random'], 15+x, love.graphics.getHeight()/2-35)
 			love.graphics.print(fontAwesome['fa-arrows-h'], 15+x, love.graphics.getHeight()-95)
 		end
-		--love.graphics.draw( Game.Images.Trash, 15, 15, 0, 0.5, 0.5 )
-		--love.graphics.draw( Game.Images.Shuffle, 15, love.graphics.getHeight()/2-25, 0, 0.5, 0.5 )
-		--love.graphics.draw( Game.Images.Split, 15, love.graphics.getHeight() - 115, 0, 0.5, 0.5 )
 	end
 	for i, v in pairs( Game.Objects ) do
 		if v.draw then v:draw() end
 	end
-	ui.draw()
+	ui.drawAbove()
+end
+
+--don't judge
+function love.textinput( t )
+   ui.textinput( t )
+end
+
+function love.keyreleased( key )
+	ui.keyreleased( key )
+end
+function love.keypressed( key )
+	ui.keypressed( key )
 end
 
 

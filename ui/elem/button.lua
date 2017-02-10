@@ -20,6 +20,7 @@ local button = {
 	align = "left",
 	
 	hover = false,
+	clickable = true,
 	selected = false,
 	visible = true,
 }
@@ -38,7 +39,7 @@ function button:new(data, parent)
 end
 
 function button:update( dt )
-	if ui.checkState(self) then
+	if ui.checkState(self) and self.clickable then
 		if self.onHover then
 			local mx, my = love.mouse.getPosition()
 			local ax, ay = ui.getAbsX(self),ui.getAbsY(self)
@@ -78,7 +79,7 @@ function button:draw()
 end
 
 function button:mousepressed( x, y, button )
-	if ui.checkState(self) then
+	if ui.checkState(self) and self.clickable then
 		local ax, ay = ui.getAbsX(self), ui.getAbsY(self)
 		if self.align == "center" then
 			ax = ui.getAbsX(self) + self.parent.w/2 - self.w/2
@@ -90,7 +91,7 @@ function button:mousepressed( x, y, button )
 end
 
 function button:mousereleased( x, y, button )
-	if ui.checkState(self) then
+	if ui.checkState(self) and self.clickable then
 		local ax, ay = ui.getAbsX(self), ui.getAbsY(self)
 		if self.align == "center" then
 			ax = ui.getAbsX(self) + self.parent.w/2 - self.w/2

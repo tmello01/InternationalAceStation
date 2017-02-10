@@ -220,7 +220,7 @@ local deck = {
 			if not self.held and not self.dragged then
 				self:onSingleTap()
 			end
-			local w = Game.Images.Trash:getWidth()
+			local w = 75
 			if self.dragged then
 				Tweens.Final.ShowCharmsPanel.active = false
 				Tweens.Final.HideCharmsPanel.active = true

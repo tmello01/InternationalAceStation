@@ -18,7 +18,7 @@ end
 function ui.checkState(obj,dbug)
 	if obj.state and obj.state == ui.state and obj.visible then
 		if obj.parent then
-			if obj.parent.substate == obj.substate then
+			if obj.parent.substate == obj.substate and obj.parent.visible then
 				return true
 			else
 				return false
@@ -105,7 +105,13 @@ end
 
 function ui.draw()
 	for i, v in pairs( ui.roots ) do
-		if v.draw then v:draw() end
+		if v.draw and not v.drawAboveObjects then v:draw() end
+	end
+end
+
+function ui.drawAbove()
+	for i, v in pairs( ui.roots ) do
+		if v.draw and v.drawAboveObjects then v:draw() end
 	end
 end
 
@@ -123,12 +129,20 @@ end
 
 function ui.textinput( text )
 	for i, v in pairs( ui.roots ) do
-		if v.textinput then v:textinput( text ) end
+		if v.textinput then 
+			if v:textinput( text ) then
+				return
+			end
+		end
 	end
 end
 function ui.keypressed( key )
 	for i, v in pairs( ui.roots ) do
-		if v.keypressed then v:keypressed( key ) end
+		if v.keypressed then
+			if v:keypressed( key ) then
+				return
+			end
+		end
 	end
 end
 function ui.keyreleased( key )

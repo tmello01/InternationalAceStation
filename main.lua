@@ -99,6 +99,7 @@ Game = {
 	Objects = {},
 	Zones = {},
 	Players = {},
+	Selection = {},
 	Globals = {
 		Gamestate = "Table",
 		CardWidth = 38,
@@ -346,14 +347,13 @@ for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) )
 	end
 end
 
-
 WindowsTouchID = os.clock()
 
 --Random useful functions--
 function math.clamp(low, n, high) return math.min(math.max(n, low), high) end
 function hex2rgb(hex)
-    hex = hex:gsub("#","")
-    return {tonumber("0x"..hex:sub(1,2)), tonumber("0x"..hex:sub(3,4)), tonumber("0x"..hex:sub(5,6))}
+	hex = hex:gsub("#","")
+	return {tonumber("0x"..hex:sub(1,2)), tonumber("0x"..hex:sub(3,4)), tonumber("0x"..hex:sub(5,6))}
 end
 function string.split (str, sep) -- Split string
 	local return_array = {}
@@ -496,9 +496,11 @@ function love.draw()
 			love.graphics.print(fontAwesome['fa-arrows-h'], 15+x, love.graphics.getHeight()-95)
 		end
 	end
-	for i, v in pairs( Game.Objects ) do
+	for i, v in ipairs( Game.Objects ) do
 		if v.draw then v:draw() end
 	end
+
+	touch.draw()
 	ui.drawAbove()
 end
 

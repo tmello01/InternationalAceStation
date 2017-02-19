@@ -673,6 +673,11 @@ local function makeTemplateBasePanel()
 		y = 100,
 		text = "DECK",
 	})
+	AddDeck.onclick = function()
+		ObjPanel.visible = false
+		Main.visible = false
+
+	end
 
 	ObjPanel:add("button", {
 		w = ui.font(25, "Roboto-Bold"):getHeight(),
@@ -749,6 +754,7 @@ local function makeTemplateBasePanel()
 	}).onclick = function()
 		ObjPanel.visible = true
 		ObjPanelTitle.visible = true
+		Main.visible = false
 	end
 
 	

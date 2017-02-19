@@ -35,7 +35,7 @@ local deck = {
 	tweento = false,
 	startdx = -1,
 	startdy = -1,
-	locked,
+	selected = false,
 	inhand = false,
 	held = false,
 	type = "deck",
@@ -169,6 +169,18 @@ local deck = {
 			Tweens.Final.ShowCharmsPanel.active = false
 			Tweens.Final.HideCharmsPanel.active = true
 		end
+		if self.selected then
+			for i, v in pairs( Game.Objects ) do
+				if v ~= self and v.selected then
+					if not v.dragged then
+						v.dragged = true
+					else
+						v.x = x-v.dragx
+						v.y = y-v.dragy
+					end
+				end
+			end
+		end
 	end,
 	update = function( self, dt )
 		if self.visible then
@@ -203,6 +215,13 @@ local deck = {
 				love.graphics.draw( Cards[topCard.suit][topCard.value], self.x, self.y, 0, 2, 2 )
 			end
 			love.graphics.draw( Cards.backs.cardstack, self.x, self.y, 0, 2, 2 )
+			if self.selected then
+				love.graphics.setLineWidth(3)
+				love.graphics.setColor( 0, 255, 0 )
+				love.graphics.rectangle("line", self.x, self.y, self.w*2, self.h*2 )
+				love.graphics.setColor( 255, 255, 255 )
+				love.graphics.setLineWidth(1)
+			end
 		end
 	end,
 	startTouch = function( self, id, x, y )
@@ -212,10 +231,18 @@ local deck = {
 		self.currentTouchID = id
 		self.tapTimer:restart()
 		self.tapTimer:start()
+		if self.selected then
+			for i, v in ipairs( Game.Objects ) do
+				if v.type ~= "deckgroup" and v.selected then
+					v.dragx = x-v.x
+					v.dragy = y-v.y
+				end
+			end
+		end
 		self:topDrawOrder()
 	end,
 	endTouch = function( self, id )
-		if self.touched then
+		if self.touched and self.currentTouchID == id then
 			self.tapTimer:stop()
 			if not self.held and not self.dragged then
 				self:onSingleTap()
@@ -272,11 +299,19 @@ local deck = {
 					self:remove()
 					return
 				end
+
+				for i, v in pairs( Game.Objects ) do
+					v.dragged = false
+					v.selected = false
+					v.touched = false
+					v.held = false
+				end
 			end
 			Game.Sounds.CardSlide[love.math.random(1,4)]:play()
 			self.dragged = false
 			self.held = false
 			self.touched = false
+			self.selected = false
 		end
 	end,
 	cancelTouchManager = function( self, id )
@@ -290,6 +325,14 @@ local deck = {
 				table.remove( Game.Objects, i )
 				table.insert( Game.Objects, self )
 				break
+			end
+		end
+	end,
+	bottomDrawOrder = function( self )
+		for i, v in ipairs( Game.Objects ) do
+			if v == self then
+				table.remove( Game.Objects, i )
+				table.insert( Game.Objects, 1, self )
 			end
 		end
 	end,

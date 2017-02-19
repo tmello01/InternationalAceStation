@@ -35,6 +35,7 @@ local card = {
 	firstTouchID = -1,
 	lastTouchID = 1,
 	currentTouchID = -1,
+	selected = false,
 	touched = false,
 	held = false,
 	type = "card",
@@ -94,11 +95,13 @@ local card = {
 	onDoubleTap = function( self ) --What happens when the user taps twice
 		
 	end,
-	remove = function( self )
+	remove = function( self, noskip )
 		for i, v in pairs( Game.Objects ) do
 			if v == self then
 				table.remove( Game.Objects, i )
-				break
+				if not noskip then
+					break
+				end
 			end
 		end
 	end,
@@ -125,6 +128,18 @@ local card = {
 
 			Tweens.Final.ShowCharmsPanel.active = false
 			Tweens.Final.HideCharmsPanel.active = true
+		end
+		if self.selected then
+			for i, v in pairs( Game.Objects ) do
+				if v ~= self and v.selected then
+					if not v.dragged then
+						v.dragged = true
+					else
+						v.x = x-v.dragx
+						v.y = y-v.dragy
+					end
+				end
+			end
 		end
 	end,
 	update = function( self, dt )
@@ -153,6 +168,13 @@ local card = {
 			else
 				love.graphics.draw( Cards.backs.earth, self.x, self.y, 0, 2, 2 )
 			end
+			if self.selected then
+				love.graphics.setLineWidth(3)
+				love.graphics.setColor( 0, 255, 0 )
+				love.graphics.rectangle("line", self.x, self.y, self.w*2, self.h*2 )
+				love.graphics.setColor( 255, 255, 255 )
+				love.graphics.setLineWidth(1)
+			end
 		end
 	end,
 	startTouch = function( self, id, x, y )
@@ -163,6 +185,17 @@ local card = {
 		self.currentTouchID = id
 		self.tapTimer:restart()
 		self.tapTimer:start()
+		if self.selected then
+			for i, v in ipairs( Game.Objects ) do
+				if v.type ~= "deckgroup" and v.selected then
+					v.dragx = x-v.x
+					v.dragy = y-v.y
+					
+				else
+					--v:bottomDrawOrder()
+				end
+			end
+		end
 		self:topDrawOrder()
 	end,
 	endTouch = function( self, id )
@@ -181,15 +214,32 @@ local card = {
 			if self.dragged then
 
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
+					if self.selected then
+						print(table.serialize(Game.Objects))
+						print(#Game.Objects)
+						for i = 1, #Game.Objects do
+							print(i)
+							print(table.serialize(Game.Objects[i]))
+							if Game.Objects[i].type ~= "deckgroup" and Game.Objects[i] ~= self then
+								if Game.Objects[i].selected then
+									table.remove(Game.Objects, i)
+								end
+							end
+						end
+					end
 					self:remove()
 					SHOWCHARMS = false
-				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()/2-25 and self.y <= love.graphics.getHeight()/2-25 + w then
-
 				end
 			end
 			self.dragged = false
 			self.held = false
 			self.touched = false
+			for i, v in pairs( Game.Objects ) do
+				v.dragged = false
+				v.selected = false
+				v.touched = false
+				v.held = false
+			end
 		end
 	end,
 	cancelTouchManager = function( self, id )
@@ -203,6 +253,14 @@ local card = {
 				table.remove( Game.Objects, i )
 				table.insert( Game.Objects, self )
 				break
+			end
+		end
+	end,
+	bottomDrawOrder = function( self )
+		for i, v in ipairs( Game.Objects ) do
+			if v == self then
+				table.remove( Game.Objects, i )
+				table.insert( Game.Objects, 1, self )
 			end
 		end
 	end,

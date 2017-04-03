@@ -7,6 +7,7 @@ local function checkCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 		y1 < y2+h2 and
 		y2 < y1+h1
 end
+
 local function ReverseTable(t)
     local reversedTable = {}
     local itemCount = #t
@@ -19,16 +20,14 @@ end
 local card = {
 	suit = "diamonds",
 	value = "2",
-	--texture = Textures['diamond/1.png'],
 	x = 0,
 	y = 0,
 	w = CardWidth,
 	h = CardHeight,
 	visible = true,
-	dragx = 0, --Drag X position
-	dragy = 0, --Drag Y position
-	dragged = false, --If card is being dragged or not
-	inDeck = false, --Possibly defunct
+	dragx = 0,
+	dragy = 0,
+	dragged = false,
 	inhand = false,
 	tweento = false,
 	visible = true,
@@ -88,11 +87,10 @@ local card = {
 			return
 		end
 	end,
-	onSingleTap = function( self ) --What happens when the user taps once
+	onSingleTap = function( self )
 		self.flipped = not self.flipped
-		print(self.suit, self.value)
 	end,
-	onDoubleTap = function( self ) --What happens when the user taps twice
+	onDoubleTap = function( self )
 		
 	end,
 	remove = function( self, noskip )
@@ -161,9 +159,6 @@ local card = {
 	draw = function( self )
 		if self.visible then
 			if not self.flipped then
-				if not Cards[self.suit][self.value] then
-					print( self.suit, self.value )
-				end
 				love.graphics.draw( Cards[self.suit][self.value], self.x, self.y, 0, 2, 2 )
 			else
 				love.graphics.draw( Cards.backs.earth, self.x, self.y, 0, 2, 2 )
@@ -215,11 +210,7 @@ local card = {
 
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					if self.selected then
-						print(table.serialize(Game.Objects))
-						print(#Game.Objects)
 						for i = 1, #Game.Objects do
-							print(i)
-							print(table.serialize(Game.Objects[i]))
 							if Game.Objects[i].type ~= "deckgroup" and Game.Objects[i] ~= self then
 								if Game.Objects[i].selected then
 									table.remove(Game.Objects, i)
@@ -268,7 +259,6 @@ local card = {
 card.__index = card
 
 function card:new( data )
-	print( "[card] Making new card..." )
 	local data = data or { }
 	local self = setmetatable(data, card)
 	self.__index = self

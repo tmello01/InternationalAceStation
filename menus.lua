@@ -110,8 +110,8 @@ local function makeGameTypePanel()
 		font = ui.font(30,"Roboto-Bold"),
 		align = "center",
 	}).onclick = function()
-		GameSelection.substate = "JoinGame"
-		Game.Mode = "JOIN"
+		--GameSelection.substate = "JoinGame"
+		--Game.Mode = "JOIN"
 	end
 	GameSelection:add("button", {
 		y = middle + 115,
@@ -225,8 +225,6 @@ local function makeGameTypePanel()
 	}).onclick = function()
 		GameSelection.substate = "Main"
 	end
-
-
 end
 
 local function makeGameAdminPanel()
@@ -249,8 +247,7 @@ local function makeGameAdminPanel()
 		sound = Game.Sounds.ButtonNew,
 	}).onclick = function()
 		card:new({
-			x = love.math.random(0, love.graphics.getWidth()*0.75
-				),
+			x = love.math.random(0, love.graphics.getWidth()*0.75),
 			y = love.math.random(0, love.graphics.getHeight()-100),
 			suit = suits[love.math.random(1,4)],
 			value = values[love.math.random(1,13)],
@@ -321,9 +318,13 @@ local function makeGameAdminPanel()
 		h = 50,
 		y = AdminPanel.h-125,
 		background = hex2rgb("#E53935"),
-		text = "Clear Board",
+		text = "Reset Board",
 	}).onclick = function()
-		Game.Objects = {}
+		if #Game.Template == 0 then
+			Game.Objects = {}
+		else
+			Game.LoadTemplate(Game.Template, true)
+		end
 	end
 	AdminPanel:add("button", {
 		w = HiddenSize,
@@ -383,262 +384,15 @@ local function makeGameAdminPanel()
 
 end
 
---[=[local function makeTemplateBasePanel()
-	TemplateAdminPanel = ui.new({
-		w = love.graphics.getWidth()/4,
-		x = love.graphics.getWidth() - love.graphics.getWidth()*0.075,
-		h = love.graphics.getHeight(),
-		background = { 255, 255, 255 },
-		foreground = { 0, 0, 0 },
-		state = "NewTemplate",
-		substate = "Hidden",
-	})
-	ShowTemplatePanel = TemplateAdminPanel:add("button", {
-		w = love.graphics.getWidth()*0.075,
-		substate = "Hidden",
-		h = love.graphics.getHeight(),
-		text = fontAwesome['fa-angle-double-left'],
-		font = ui.font(30, "FontAwesome"),
-	})
-	ShowTemplatePanel.onclick = function()
-		TemplateAdminPanel.substate = "Main"
-		TemplateAdminPanel.x = love.graphics.getWidth()*.75
-	end
-	HideTemplatePanel = TemplateAdminPanel:add("button", {
-		background = hex2rgb("#F44336"),
-		w = 35,
-		h = 35,
-		x = TemplateAdminPanel.w-35,
-		foreground = { 255, 255, 255 },
-		text = fontAwesome['fa-times'],
-		font = ui.font(20, "FontAwesome"),
-		sound = Game.Sounds.ButtonBackward,
-	})
-	HideTemplatePanel.onclick = function()
-		TemplateAdminPanel.substate = "Hidden"
-		TemplateAdminPanel.x = love.graphics.getWidth() - love.graphics.getWidth()*0.075
-	end
-	TemplateName = TemplateAdminPanel:add("textinput", {
-		w = TemplateAdminPanel.w - 25,
-		y = 75,
-		align = "center",
-		font = ui.font(20),
-		placeholder = "Template Name",
-	}),
-	TemplateAdminPanel:add("text", {
-		text = "ADD ITEMS",
-		font = ui.font(20),
-		align="center",
-		y = 140,
-	})
-	LoadTemplate = TemplateAdminPanel:add("button", {
-		text = "Load Template",
-		w = TemplateAdminPanel.w - HideTemplatePanel.w,
-		h = HideTemplatePanel.h,
-		background = hex2rgb("#9C27B0"),
-	})
-	LoadTemplate.onclick = function()
-		TemplateAdminPanel.substate = "LoadTemplate"
-	end
-	NewTemplateDeckButton = TemplateAdminPanel:add("button", {
-		w = TemplateAdminPanel.w/2,
-		h = TemplateAdminPanel.w/2,
-		text = "Add Deck",
-		y = 170,
-	})
-	NewTemplateDeckButton.onclick = function()
-		TemplateAdminPanel.substate = "NewDeck"
-	end
-	TemplateAdminPanel:add("button", {
-		w = TemplateAdminPanel.w,
-		h = 75,
-		text = "Return to Menu",
-		y = TemplateAdminPanel.h-75,
-		background = hex2rgb("#F44336"),
-	}).onclick = function()
-		TemplateAdminPanel.substate = "Hidden"
-		TemplateAdminPanel.x = love.graphics.getWidth() - love.graphics.getWidth()*0.075
-		ui.state = "Menu"
-	end
-	TemplateAdminPanel:add("button", {
-		w = TemplateAdminPanel.w,
-		h = 150,
-		text = "Save This Template!",
-		y = TemplateAdminPanel.h-225,
-		background = hex2rgb("#43A047"),
-	}).onclick = function()
-		Game.SaveTemplate(TemplateName.text)
-	end
-
-
-
-	--Load template--
-	TemplateAdminPanel:add("text", {
-		substate = "LoadTemplate",
-		align = "center",
-		font = ui.font(30),
-		text = "Load Template",
-		y = 10
-	})
-	LoadTemplate = TemplateAdminPanel:add("button", {
-		visible = false,
-		w = TemplateAdminPanel.w,
-		h = 150,
-		y = TemplateAdminPanel.h-150,
-		background = hex2rgb("#43A047"),
-		text = "Load Template!",
-	})
-	LoadTemplate.onclick = function()
-		Game.LoadTemplate(TemplateNameInput.text)
-	end
-	TemplateNameInput = TemplateAdminPanel:add("textinput", {
-		align = "center",
-		y = 50,
-		font= ui.font(25),
-		placeholder = "Template Name",
-		substate = "LoadTemplate",
-	})
-end
-
-local function makeTemplateDeckPanel()
-	BackButton = TemplateAdminPanel:add("button", {
-		w = ui.font(30, "FontAwesome"):getHeight()+10,
-		h = ui.font(30, "FontAwesome"):getHeight()+10,
-		background = hex2rgb("#F44336"),
-		foreground = {255, 255, 255},
-		text = fontAwesome['fa-times'],
-		font = ui.font(30,"FontAwesome"),
-		substate = "NewDeck",
-		x = TemplateAdminPanel.w - ui.font(30, "FontAwesome"):getHeight()-10,
-		sound = Game.Sounds.ButtonBackward,
-	})
-	BackButton.onclick = function()
-		TemplateAdminPanel.substate = "Main"
-	end
-	TemplateAdminPanel:add("text", {
-		font = ui.font( 22, "Roboto-LightItalic" ),
-		text = "DECK PRESETS", 
-		align = "center",
-		y = 75,
-		substate = "NewDeck",
-	})
-	Standard52Deck = TemplateAdminPanel:add("radio", {
-		x = 10,
-		font = ui.font(18),
-		label = "Standard 52 Card",
-		y = 115,
-		group = "DeckSelection",
-		active = true,
-		substate = "NewDeck",
-	})
-	SpadesOnly = TemplateAdminPanel:add("radio", {
-		x = 10,
-		font = ui.font(18),
-		label = "Spades Only",
-		y = 145,
-		group = "DeckSelection",
-		substate = "NewDeck",
-	})
-	HeartsOnly = TemplateAdminPanel:add("radio", {
-		x = 10,
-		font = ui.font(18),
-		label = "Hearts Only",
-		y = 175,
-		group = "DeckSelection",
-		substate = "NewDeck",
-	})
-	DiamondsOnly = TemplateAdminPanel:add("radio", {
-		x = 10,
-		font = ui.font(18),
-		label = "Diamonds Only",
-		y = 205,
-		group = "DeckSelection",
-		substate = "NewDeck",
-	})
-	ClubsOnly = TemplateAdminPanel:add("radio", {
-		x = 10,
-		font = ui.font(18),
-		label = "Clubs Only",
-		y = 235,
-		group = "DeckSelection",
-		substate = "NewDeck",
-	})
-	CreatePresetButton = TemplateAdminPanel:add("button", {
-		align = "center", 
-		y = 275, 
-		background = hex2rgb("#2196F3"),
-		h = 50,
-		w = TemplateAdminPanel.w*.75,
-		text = "Custom Presets",
-		substate="NewDeck",
-	})
-	TemplateAdminPanel:add("text", {
-		font = ui.font( 22, "Roboto-LightItalic" ),
-		text = "DECK SETTINGS", 
-		align = "center",
-		y = 350,
-		substate = "NewDeck",
-	})
-	ShuffleDeck = TemplateAdminPanel:add("radio", {
-		x = 10,
-		y = 390,
-		font = ui.font(18),
-		label = "Shuffle Cards",
-		active = true,
-		substate = "NewDeck",
-	})
-	FlipDeck = TemplateAdminPanel:add("radio", {
-		x = 10,
-		y = 430,
-		font = ui.font(18),
-		label = "Flip Cards",
-		active = true,
-		substate = "NewDeck",
-	})
-	CreateDeckButton = TemplateAdminPanel:add("button", {
-		y = TemplateAdminPanel.h-100,
-		h = 100,
-		background = hex2rgb("#43A047"),
-		font = ui.font(20, "Roboto-Bold"),
-		w = TemplateAdminPanel.w,
-		substate="NewDeck",
-		text = "Create Deck!",
-		sound = Game.Sounds.ButtonNew,
-	})
-	CreateDeckButton.onclick = function()
-		local selection = ui.getRadioGroup("DeckSelection")
-		local c = {}
-		local deckgroup = os.time()
-		if selection == Standard52Deck then
-			for i = 1, 52 do
-				table.insert( c, {
-					value = "any",
-					suit = "any", 
-					flipped = FlipDeck.active,
-					deckgroup = deckgroup,
-					shuffled = ShuffleDeck.active,
-				})
-			end
-		elseif selection == ClubsOnly then
-			for i = 1, 13 do
-				table.insert(c, {
-					value = "any",
-					suit = "clubs",
-					flipped = FlipDeck.active,
-					deckgroup = deckgroup,
-					shuffled = ShuffleDeck.active,
-				})
-			end
-		end
-
-		deckTemplate:new({cards=c,shuffled = ShuffleDeck.active, deckgroup = deckgroup})
-		TemplateAdminPanel.substate = "Main"
-	end
-end--]=]
-
 local function makeTemplateBasePanel()
 
+	
 
+	local Main = ui.new({
+		w = love.graphics.getWidth(),
+		h = 75,
+		state = "NewTemplate"
+	})
 	local ObjPanel = ui.new({
 		w = love.graphics.getWidth()/2,
 		h = love.graphics.getHeight()/2,
@@ -688,13 +442,8 @@ local function makeTemplateBasePanel()
 		text = fontAwesome['fa-times'],
 	}).onclick = function()
 		ObjPanel.visible = false
+		Main.visible = true
 	end
-
-	local Main = ui.new({
-		w = love.graphics.getWidth(),
-		h = 75,
-		state = "NewTemplate"
-	})
 	TemplateName = Main:add("textinput", {
 		w = 250,
 		align = "center",
@@ -836,7 +585,6 @@ local function makeTemplateBasePanel()
 			PathExists:reformat()
 		end
 	end
-	
 end
 
 

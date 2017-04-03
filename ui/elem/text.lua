@@ -44,7 +44,7 @@ function text:new(data, parent)
 	end
 	
 	self.originaltext = self.text
-	print( table.serialize( self.lines ) )
+	--print( table.serialize( self.lines ) )
 
 	table.insert(parent.children,self)
 	return self

@@ -1,4 +1,4 @@
-
+socket = socket or require "socket"
 local function shuffleTable( t )
     local rand = math.random 
     assert( t, "shuffleTable() expected a table, got nil" )
@@ -12,12 +12,22 @@ local function shuffleTable( t )
 end
 
 ui.state = "Menu"
---Creates table for server information, to be used by servercreate.lua
 
 SHOWCHARMS = false
 SHOWDECKCHARMS = false
 
 Game = {
+	ConnectMode = "Offline",
+	ServerInfo = {
+		IP = "",
+		Port = 22222
+	},
+	InternalServer = {
+		Server = "" --to be initialized later
+	},
+	InternalClient = {
+		Client = socket.udp()
+	},
 	Objects = {},
 	Zones = {},
 	Players = {},

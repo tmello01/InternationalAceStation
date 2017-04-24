@@ -110,8 +110,59 @@ local function makeGameTypePanel()
 		font = ui.font(30,"Roboto-Bold"),
 		align = "center",
 	}).onclick = function()
-		--GameSelection.substate = "JoinGame"
-		--Game.Mode = "JOIN"
+		GameSelection.substate = "JoinGame"
+		Game.Mode = "JOIN"
+	end
+	IPAddrInput = GameSelection:add("textinput", {
+		w = 400,
+		align = "center",
+		background = { 255, 255, 255 },
+		y = GameSelection.h/2,
+		substate = "JoinGame",
+		placeholder = "IP Address or Hostname"
+	})
+	GameSelection:add("button", {
+		y = middle + 50,
+		background = { 255, 255, 255 },
+		foreground = hex2rgb("#1976D2"),
+		text = "Connect!",
+		h = 50,
+		font = ui.font(20,"Roboto-Bold"),
+		align = "center",
+		substate = "JoinGame"
+	}).onclick = function()
+		--Attempt connection--
+		Game.InternalClient.Client = nil
+		Game.InternalClient.Client = socket.udp()
+		print( IPAddrInput.text )
+		Game.InternalClient.Client:settimeout(1)
+		local addr = socket.dns.toip(IPAddrInput.text)
+		if addr then
+			Game.InternalClient.Client:sendto("AttemptConnect", socket.dns.toip(IPAddrInput.text), 22222)
+			local data, ip, port = Game.InternalClient.Client:receive()
+			if data == "ConnectAttemptSuccess" then
+				--Connection Achieved!
+				print("connected!")
+				Game.InternalClient.Client:settimeout(0.01)
+			else
+				print("could not connect", 1)
+			end
+		else
+			print("could not connect", 2)
+		end
+	end
+	GameSelection:add("button", {
+		y = middle + 115,
+		background = { 255, 255, 255 },
+		foreground = hex2rgb("#1976D2"),
+		text = "Cancel",
+		h = 50,
+		font = ui.font(20,"Roboto-Bold"),
+		sound = Game.Sounds.ButtonBackward,
+		align = "center",
+		substate = "JoinGame"
+	}).onclick = function()
+		GameSelection.substate = "Main"
 	end
 	GameSelection:add("button", {
 		y = middle + 115,
@@ -183,7 +234,6 @@ local function makeGameTypePanel()
 		group = "ServerClient",
 
 		foregroundinactive = hex2rgb("#64B5F6"),
-		selectable = false,
 		size = 35,
 		font = ui.font(30),
 		align = "center",
@@ -205,6 +255,17 @@ local function makeGameTypePanel()
 		y = 425
 	}).onclick = function()
 		local selection = ui.getRadioGroup("Template")
+		local hostmode = ui.getRadioGroup("ServerClient")
+		if hostmode == MultiPlayer then
+			Game.InternalServer.Server = socket.udp()
+			Game.InternalServer.Server:setsockname(socket.dns.toip("localhost"), 22222)
+			Game.InternalServer.Server:settimeout(0.01)
+			Game.ConnectMode = "Host"
+		else
+			--No internal server is initialized--
+			Game.ConnectMode = "Offline"
+			Game.InternalServer.Server = 0
+		end
 		if selection == Solitaire then
 			Game.LoadTemplate("Solitaire", true)
 		end

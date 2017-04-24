@@ -60,7 +60,9 @@ function textinput:draw()
 		if self.align == "center" then
 			local twp = self.parent.w
 			x = math.ceil(ax + (twp/2)-self.w/2)
-		end
+		end		
+		love.graphics.setColor( self.background )
+		love.graphics.rectangle("fill", x, ay, self.w, self.font:getHeight() + 6)
 		love.graphics.setLineWidth( self.borderweight )
 		love.graphics.rectangle("line", x, ay, self.w, self.font:getHeight() + 6)
 		if #self.text < 1 and not self.active then
@@ -68,6 +70,7 @@ function textinput:draw()
 			love.graphics.setFont( self.font )
 			love.graphics.print( self.placeholder, x + 5, ay + 3 )
 		else
+			love.graphics.setColor( self.foreground )
 			love.graphics.setFont(self.font)
 			local appendChar = ""
 			if self.active then

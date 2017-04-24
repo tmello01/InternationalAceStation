@@ -17,6 +17,68 @@ local function ReverseTable(t)
     return reversedTable
 end
 
+--[[
+
+	suit:
+		@type: string
+		@values: "diamonds", "hearts", "spades", "clubs"
+		@purpose: specifies the card's suit
+	
+	value:
+		@type: string
+		@values: ("2"-"10"), "a", "k", "q", "j"
+		@purpose: specifies the card's value
+	
+	x, y:
+		@type: number
+		@purpose: specifies position on screen
+	
+	w, h:
+		@type: number
+		@purpose: specifies width and height of card
+
+	visible:
+		@type: boolean
+		@purpose: tells renderer whether to draw the card or not
+
+	dragx, dragy:
+		@type: number
+		@purpose: holds the location of touch positions when being dragged in relation to the card
+
+	dragged:
+		@type: boolean
+		@purpose: specifies whether the card is being dragged or not
+
+	inhand:
+		@type: boolean
+		@purpose: specifies whether the card is in hand or not
+
+	tweento:
+		@type: boolean
+		@purpose: specifies whether the card's tween animations are active
+
+	firstTrouchID, lastTouchID, currentTouchID:
+		@type: number
+		@purpose: placeholders for when more advanced touch capabilities are added
+
+	selected:
+		@type: boolean
+		@purpose: specifies if the card is in a selection box
+
+	touched, held:
+		@type: boolean
+		@purpose: placeholder for when more advanced touch capabilities are added
+
+	type:
+		@type: string
+		@purpose: specifies to external object handlers the type of object
+
+	tapTimer:
+		@type: timer [timer.lua]
+		@purpose: placeholder for when more advanced touch capabilities are added
+
+]]--
+
 local card = {
 	suit = "diamonds",
 	value = "2",
@@ -30,7 +92,6 @@ local card = {
 	dragged = false,
 	inhand = false,
 	tweento = false,
-	visible = true,
 	firstTouchID = -1,
 	lastTouchID = 1,
 	currentTouchID = -1,
@@ -39,9 +100,21 @@ local card = {
 	held = false,
 	type = "card",
 	tapTimer = timer.new(0.5),
+
+	--[[
+		this:getPosition()
+			@purpose: returns the x and y values of the object
+			@return: this.x, this.y
+	]]--
 	getPosition = function( self )
 		return self.x, self.y
 	end,
+
+	--[[
+		this:onHold()
+			@purpose: runs an action when the card is held
+			@return: void
+	]]--
 	onHold = function( self )
 
 		local cardsToStack = {}
@@ -87,12 +160,33 @@ local card = {
 			return
 		end
 	end,
+
+	--[[
+		this:onSingleTap()
+			@purpose: flip card to opposite side
+			@return: void
+	]]--
 	onSingleTap = function( self )
 		self.flipped = not self.flipped
+		return
 	end,
+
+	--[[
+		this:onDoubleTap()
+		@purpose: none at the moment
+		@return: void
+	]]
 	onDoubleTap = function( self )
-		
+		return
 	end,
+
+	--[[
+		this:remove( noskip )
+			@purpose: removes card from global object pool
+			@params:
+				noskip: specifies if object search loop should break
+			@return: void
+	]]
 	remove = function( self, noskip )
 		for i, v in pairs( Game.Objects ) do
 			if v == self then
@@ -102,7 +196,17 @@ local card = {
 				end
 			end
 		end
+		return
 	end,
+
+	--[[
+		this:drag( x, y )
+			@purpose: executes when the card is being dragged
+			@params:
+				x: the new x location for the card
+				y: the new y location for the card
+			@return: void
+	]]
 	drag = function( self, x, y )
 		if not self.dragged then
 			local sound = love.math.random(1,4)
@@ -140,6 +244,14 @@ local card = {
 			end
 		end
 	end,
+
+	--[[
+		this:update( dt )
+			@purpose: internal update function; updates internal timers and tweens
+			@params:
+				dt: delta time (from love.update(dt))
+			@return: void
+	]]--
 	update = function( self, dt )
 		if self.visible then
 			if self.touched and not self.dragged then
@@ -155,7 +267,14 @@ local card = {
 				end
 			end
 		end
+		return
 	end,
+
+	--[[
+		this:draw()
+			@purpose: draws object to the screen
+			@return: void
+	]]
 	draw = function( self )
 		if self.visible then
 			if not self.flipped then
@@ -171,7 +290,16 @@ local card = {
 				love.graphics.setLineWidth(1)
 			end
 		end
+		return
 	end,
+
+	--[[
+		this:startTouch( id, x, y )
+			@purpose: initializes a touch event to the object
+			@params:
+				id: the touch's unique id
+				x: x position 
+	]]
 	startTouch = function( self, id, x, y )
 	
 		self.dragx = x-self.x

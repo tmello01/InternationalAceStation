@@ -24,7 +24,7 @@
 	Art by Armen Eghian, Justin Stevens, Dylan Ross, Lore Bellavance, and Alex Mullin	
 
 ]=]--
-require("socket")
+socket = socket or require "socket"
 local http = require("socket.http")
 
 require "ser"
@@ -79,6 +79,15 @@ function love.update( dt )
 
 	for _, v in pairs( Game.Objects ) do
 		if v.update then v:update(dt) end
+	end
+
+	if Game.ConnectMode == "Host" then
+		local data, ip, port = Game.InternalServer.Server:receivefrom()
+		if data then
+			if data == "AttemptConnect" then
+				Game.InternalServer.Server:sendto("ConnectAttemptSuccess", ip, port)
+			end
+		end
 	end
 
 end

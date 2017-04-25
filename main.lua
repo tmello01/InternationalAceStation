@@ -117,6 +117,16 @@ function love.draw()
 	for i, v in ipairs( Game.Objects ) do
 		if v.draw then v:draw() end
 	end
+	
+	if (#Game.Selection > 0) then
+		Game.SelectionCanvas:renderTo(function()
+			love.graphics.clear()
+			for i, v in pairs( Game.Selection ) do
+				v:draw()
+			end
+		end)
+		love.graphics.draw( Game.SelectionCanvas )
+	end
 
 	touch.draw()
 	ui.drawAbove()
@@ -137,9 +147,13 @@ end
 
 if Windows then
 	function love.mousepressed( x, y, button )
-		WindowsTouchID = os.clock()
-		ui.mousepressed( x, y, button )
-		touch.new( WindowsTouchID, x, y )
+		if button == 1 then
+			ui.mousepressed( x, y, button )
+			touch.remove( WindowsTouchID, x, y )
+			
+			WindowsTouchID = os.clock()
+			touch.new( WindowsTouchID, x, y )
+		end
 	end
 
 	function love.mousereleased( x, y, button )
@@ -148,6 +162,8 @@ if Windows then
 	end
 else
 	function love.touchpressed( id, x, y )
+		touch.remove( WindowsTouchID, x, y )
+		
 		WindowsTouchID = os.clock()
 		touch.new( WindowsTouchID, x, y )
 		ui.mousepressed( x, y, 1 )

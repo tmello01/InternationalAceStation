@@ -32,6 +32,7 @@ Game = {
 	Zones = {},
 	Players = {},
 	Selection = {},
+	SelectionCanvas = love.graphics.newCanvas(),
 	Globals = {
 		Gamestate = "Table",
 		CardWidth = 38,

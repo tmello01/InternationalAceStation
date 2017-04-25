@@ -39,11 +39,11 @@ local function ReverseTable(t)
     return reversedTable
 end
 
-local function isOnObject(id,x,y)
+local function isOnObject(id,x,y,skipUpdate)
 	for i, v in pairs( ReverseTable(Game.Objects) ) do
 		if v.type ~= "deckgroup" then
 			if x >= v.x and x <= v.x + (v.w*2) and y >= v.y and y <= v.y + (v.h*2) then
-				v:startTouch(id,x,y)
+				v:startTouch(id,x,y,skipUpdate)
 				return true
 			end
 		end
@@ -55,13 +55,17 @@ function t:new( id, x, y )
 	local self = setmetatable(data,t)
 	self.pastDeadzone = false
 	table.insert( touches, self )
-	if not isOnObject(id,x,y) and ui.state == "Main" then
+	if not isOnObject(id,x,y,(#Game.Selection > 0)) and ui.state == "Main" then
 		self.startx = x
 		self.starty = y
 		self.selecting = true
 		for i, v in pairs( Game.Objects ) do
 			if v.selected then v.selected = false end
 		end
+		Game.Selection = {}
+		love.graphics.setCanvas( Game.SelectionCanvas )
+		love.graphics.clear()
+		love.graphics.setCanvas()
 	end
 	return self
 end
@@ -106,6 +110,28 @@ function t:endTouch(x, y)
 	local x2 = math.max(self.x, self.startx)
 	local y1 = math.min(self.y, self.starty)
 	local y2 = math.max(self.y, self.starty)
+
+	print( self.canselect )
+	--[[if not self.selecting and #Game.Selection > 0 then
+		if x >= 0 and x <= 75 and y >= 0 and y <= 75 then
+			--delete selection
+			for i, obj in pairs( Game.Selection ) do
+				for k, v in pairs( Game.Objects ) do
+					print( obj, v )
+					if obj == v then
+						table.remove(Game.Objects, k)
+						obj = nil
+					end
+				end
+			end
+		end
+		
+	
+		Game.SelectionCanvas:renderTo(function()
+			love.graphics.clear()
+		end)
+		return
+	end--]]
 	if self.selecting and self.canselect then
 		for i, obj in pairs( Game.Objects ) do
 			if obj.type ~= "deckgroup" then
@@ -114,6 +140,11 @@ function t:endTouch(x, y)
 					table.insert( Game.Selection, obj )
 				end
 			end
+		end
+	else
+		Game.Selected = {}
+		for i, v in pairs( Game.Objects ) do
+			v.selected = false
 		end
 	end
 

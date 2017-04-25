@@ -298,9 +298,11 @@ local card = {
 			@purpose: initializes a touch event to the object
 			@params:
 				id: the touch's unique id
-				x: x position 
+				x: x position
+				y: y position
+				skipUpdate: whether the card should not re-order itself
 	]]
-	startTouch = function( self, id, x, y )
+	startTouch = function( self, id, x, y, skipUpdate )
 	
 		self.dragx = x-self.x
 		self.dragy = y-self.y
@@ -319,7 +321,9 @@ local card = {
 				end
 			end
 		end
-		self:topDrawOrder()
+		if not skipUpdate then
+			self:topDrawOrder()
+		end
 	end,
 	endTouch = function( self, id )
 		if self.touched then
@@ -338,13 +342,18 @@ local card = {
 
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					if self.selected then
-						for i = 1, #Game.Objects do
+						--[[for i = 1, #Game.Objects do
 							if Game.Objects[i].type ~= "deckgroup" and Game.Objects[i] ~= self then
 								if Game.Objects[i].selected then
 									table.remove(Game.Objects, i)
 								end
 							end
 						end
+						for i, v in pairs( Game.Objects ) do
+							if v.type ~= "deckgroup" and v ~= self and v.selected then
+								table.remove(Game.Objects, i)
+							end
+						end--]]
 					end
 					self:remove()
 					SHOWCHARMS = false

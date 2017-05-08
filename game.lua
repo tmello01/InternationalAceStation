@@ -355,10 +355,10 @@ for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) )
 	end
 end
 chipsAndColors = {}
-for i, v in pairs(love.filesystem.getDirectoryItems(" assets/images/chips/singles")) do
+--[[for i, v in pairs(love.filesystem.getDirectoryItems(" assets/images/chips/singles")) do
 	chipsAndColors[v] = {}
 	for k, z in pairs( love.filesystem.getDirectoryItems("assets/images/"))
-
+--]]
 WindowsTouchID = os.clock()
 
 --Random useful functions--

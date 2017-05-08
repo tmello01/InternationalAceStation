@@ -1,5 +1,5 @@
-local chipWidth = 19
-local chipHeight = 19
+local chipWidth = 26
+local chipHeight = 26
 
 local function checkChipCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 	return x1 < x2+w2 and
@@ -156,7 +156,7 @@ local chip {
 		self.tapTimer:start()
 		if self.selected then
 			for i, v in ipairs( Game.Objects ) do
-				if v.type ~= "deckgroup" and v.selected then
+				if v.type ~= "stackgroup" and v.selected then
 					v.dragx = x-v.x
 					v.dragy = y-v.y
 					
@@ -171,9 +171,6 @@ local chip {
 	end,
 	endTouch = function( self, id )
 		if self.touched then
-			local sound = love.math.random(1,4)
-			Game.Sounds.CardSlide[sound]:stop()
-			Game.Sounds.CardSlide[sound]:play()
 			self.tapTimer:stop()
 			if not self.held and not self.dragged then
 				self:onSingleTap()
@@ -219,10 +216,28 @@ local chip {
 			self.tapTimer:stop()
 		end
 	end,
-	
-	function card:new( data )
+	topDrawOrder = function( self )
+		for i, v in pairs( Game.Objects ) do
+			if v == self then
+				table.remove( Game.Objects, i )
+				table.insert( Game.Objects, self )
+				break
+			end
+		end
+	end,
+	bottomDrawOrder = function( self )
+		for i, v in ipairs( Game.Objects ) do
+			if v == self then
+				table.remove( Game.Objects, i )
+				table.insert( Game.Objects, 1, self )
+			end
+		end
+	end,
+}
+	chip.__index = chip
+	function chip:new( data )
 		local data = data or { }
-		local self = setmetatable(data, card)
+		local self = setmetatable(data, chip)
 		self.__index = self
 		
 		if self.tweentox or self.tweentoy then
@@ -231,11 +246,8 @@ local chip {
 			self.tweento = true
 			self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
 		end
-		table.insert( Game.Objects, self )
-		
+		table.insert( Game.Objects, self )	
 		self:topDrawOrder()
-
-
 		return self
 	end
-}
+return chip

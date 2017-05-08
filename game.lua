@@ -278,6 +278,10 @@ for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) )
 		Cards[v][z:sub(1,-5)]:setFilter("nearest", "nearest")
 	end
 end
+chipsAndColors = {}
+for i, v in pairs(love.filesystem.getDirectoryItems(" assets/images/chips/singles")) do
+	chipsAndColors[v] = {}
+	for k, z in pairs( love.filesystem.getDirectoryItems("assets/images/"))
 
 WindowsTouchID = os.clock()
 

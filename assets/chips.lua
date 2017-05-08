@@ -233,6 +233,19 @@ local chip {
 			end
 		end
 	end,
+	draw = function( self )
+	if self.visible then
+			love.graphics.draw( Chip.chipColor, self.x, self.y, 0, 2, 2 )
+		if self.selected then
+			love.graphics.setLineWidth(3)
+			love.graphics.setColor( 0, 255, 0 )
+			love.graphics.rectangle()
+			love.graphics.setColor( 255, 255, 255 )
+			love.graphics.setLineWidth(1)
+		end
+	end
+	return
+end,
 }
 	chip.__index = chip
 	function chip:new( data )

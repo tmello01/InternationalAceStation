@@ -1,6 +1,6 @@
 local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
 local suits = { "diamonds", "clubs", "hearts", "spades" }
-local chipColors = {"white", "red", "grey", "green", "orange", "black", "pink", "purple", "yellow", "lightBlue", "brown"}
+local chipColors = {"singleWhite", "singleRed", "singleBlue", "singleGrey", "singleGreen", "singleOrange", "singleBlack", "singlePink", "singlePurple", "singleYellow", "singleLightBlue"}
 local splashes = {
 	"Give me some space!",
 	"This game just launched!",
@@ -352,8 +352,9 @@ local function makeGameAdminPanel()
 			deck:new({cards=c, x = love.math.random(0,200), y = love.math.random(0, 200)})
 		end
 	end
+	--Chip button creation
 	AdminPanel:add("button", {
-		x = math.ceil((AdminPanel.w/2)-10),
+		x = math.ceil((AdminPanel.w/2)+50),
 		y = 70,
 		w = math.floor(AdminPanel.w/2),
 		h = math.floor(AdminPanel.w/2),
@@ -364,7 +365,7 @@ local function makeGameAdminPanel()
 		chip:new({
 			x = love.math.random(0, love.graphics.getWidth()*0.75),
 			y = love.math.random(0, love.graphics.getHeight()-100),
-			chipColor = chipColors[love.math.random(0,10)],
+			chipColor = chipColors[love.math.random(0,10)],z
 		})
 	end
 	AdminPanel:add("button", {

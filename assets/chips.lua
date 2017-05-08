@@ -220,22 +220,22 @@ local chip {
 		end
 	end,
 	
-function card:new( data )
-	local data = data or { }
-	local self = setmetatable(data, card)
-	self.__index = self
-	
-	if self.tweentox or self.tweentoy then
-		self.tweentox = self.tweentox or self.x
-		self.tweentoy = self.tweentoy or self.y
-		self.tweento = true
-		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
+	function card:new( data )
+		local data = data or { }
+		local self = setmetatable(data, card)
+		self.__index = self
+		
+		if self.tweentox or self.tweentoy then
+			self.tweentox = self.tweentox or self.x
+			self.tweentoy = self.tweentoy or self.y
+			self.tweento = true
+			self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
+		end
+		table.insert( Game.Objects, self )
+		
+		self:topDrawOrder()
+
+
+		return self
 	end
-	table.insert( Game.Objects, self )
-	
-	self:topDrawOrder()
-
-
-	return self
-end
 }

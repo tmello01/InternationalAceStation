@@ -1,5 +1,6 @@
 local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
 local suits = { "diamonds", "clubs", "hearts", "spades" }
+local chipColors = {"white", "red", "grey", "green", "orange", "black", "pink", "purple", "yellow", "lightBlue", "brown"}
 local splashes = {
 	"Give me some space!",
 	"This game just launched!",

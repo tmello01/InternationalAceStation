@@ -1,35 +1,34 @@
-local chipWidth = 26
-local chipHeight = 26
+local stackHeight = 
+local stackWidth = 
 
-local function checkChipCollision(x1,y1,w1,h1, x2,y2,w2,h2)
+local function checkCollision(x1,y1,w1,h1, x2,y2,w2,h2)
 	return x1 < x2+w2 and
 		x2 < x1+w1 and
 		y1 < y2+h2 and
 		y2 < y1+h1
 end
 
-local chip {
-	chipColor= "white"
-	value = "1",
+local stack = {
 	x = 0,
 	y = 0,
-	w = CardWidth,
-	h = CardHeight,
+	w = DeckWidth,
+	h = DeckHeight,
+	istemplate = false,
 	visible = true,
-	dragx = 0,
-	dragy = 0,
-	dragged = false,
-	inhand = false,
-	tweento = false,
-	firstTouchID = -1,
-	lastTouchID = 1,
-	currentTouchID = -1,
-	selected = false,
+	dragx = 0, --Drag X position
+	dragy = 0, --Drag Y position
+	dragged = false, --If card is being dragged or not
+	visible = true,
 	touched = false,
+	tweento = false,
+	startdx = -1,
+	startdy = -1,
+	selected = false,
+	inhand = false,
 	held = false,
-	type = "chip",
+	type = "stack",
 	tapTimer = timer.new(0.5),
-
+    
     getPosition = function( self )
 		return self.x, self.y
 	end,
@@ -233,19 +232,6 @@ local chip {
 			end
 		end
 	end,
-	draw = function( self )
-	if self.visible then
-			love.graphics.draw( Chip.chipColor, self.x, self.y, 0, 2, 2 )
-		if self.selected then
-			love.graphics.setLineWidth(3)
-			love.graphics.setColor( 0, 255, 0 )
-			love.graphics.rectangle()
-			love.graphics.setColor( 255, 255, 255 )
-			love.graphics.setLineWidth(1)
-		end
-	end
-	return
-end,
 }
 	chip.__index = chip
 	function chip:new( data )

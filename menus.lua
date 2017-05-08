@@ -1,5 +1,6 @@
 local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
 local suits = { "diamonds", "clubs", "hearts", "spades" }
+local chipColors = {"singleWhite", "singleRed", "singleBlue", "singleGrey", "singleGreen", "singleOrange", "singleBlack", "singlePink", "singlePurple", "singleYellow", "singleLightBlue"}
 local splashes = {
 	"Give me some space!",
 	"This game just launched!",
@@ -346,6 +347,7 @@ function MakeGameAdminPanel()
 			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
 			Tweens.Final.HideAdminPanel.active = true
 		end
+<<<<<<< HEAD
 		AdminPanel:add("button", {
 			w = HiddenSize,
 			h = AdminPanel.h,
@@ -387,6 +389,56 @@ function MakeGameAdminPanel()
 			AdminPanel.substate = "Hidden"
 			AdminPanel.x = love.graphics.getWidth()-HiddenSize
 			ui.state = "Menu"
+=======
+	end
+	--Chip button creation
+	AdminPanel:add("button", {
+		x = math.ceil((AdminPanel.w/2)+50),
+		y = 70,
+		w = math.floor(AdminPanel.w/2),
+		h = math.floor(AdminPanel.w/2),
+		background = {56,142,60},
+		foreground = {255,255,255},
+		text = "Chip"
+	}).onClick = function()
+		chip:new({
+			x = love.math.random(0, love.graphics.getWidth()*0.75),
+			y = love.math.random(0, love.graphics.getHeight()-100),
+			chipColor = chipColors[love.math.random(0,10)],z
+		})
+	end
+	AdminPanel:add("button", {
+		w = AdminPanel.w,
+		background = hex2rgb("#B71C1C"),
+		foreground = { 255, 255, 255 },
+		text = "Return to Menu",
+		h = 75,
+		y = AdminPanel.h - 75,
+	}).onclick = function()
+		AdminPanel.substate = "Quit"
+	end
+	AdminPanel:add("button", {
+		w = 35,
+		h = 35,
+		x = AdminPanel.w-35,
+		background = hex2rgb("#B71C1C"),
+		font = ui.font(16, "FontAwesome"),
+		text = fontAwesome['fa-times'],
+		sound = Game.Sounds.ButtonBackward,
+	}).onclick = function()
+		AdminPanel.substate = "Hidden"
+		--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
+		Tweens.Final.HideAdminPanel.active = true
+	end
+	AdminPanel:add("button", {
+		w = AdminPanel.w,
+		h = 50,
+		y = AdminPanel.h-125,
+		background = hex2rgb("#E53935"),
+		text = "Reset Board",
+	}).onclick = function()
+		if #Game.Template == 0 then
+>>>>>>> 1a10de69762542287b1c05d25fd62f9298aa1507
 			Game.Objects = {}
 			SplashText.text = "\"" .. splashes[love.math.random(1,#splashes)] .. "\""
 		end

@@ -18,13 +18,25 @@ local textinput = {
 	active = false,
 	visible = true,
 
+	charset = "",
+	checkCharset = function( self, char )
+		if #self.charset > 0 then
+			for i=1, #self.charset do
+				if self.charset:sub(i,i) == char then
+					return true
+				end
+			end
+			return false
+		end
+	end,
+
 	maxlength = -1,
 }
 textinput.__index = textinput
 
 function textinput:new( data, parent )
 	local data = data or {}
-	local self = setmetatable(data, textinput)
+	local self = setmetatable(data, copy3(textinput))
 	self.parent = parent or error("Textinput needs a parent object")
 	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(26) end
@@ -101,12 +113,11 @@ end
 
 function textinput:input(i)
 	if ui.checkState( self ) and self.active and (#self.text < self.maxlength or self.maxlength < 0) then
-		--print("Text: " .. i)
-		print( self.placeholder )
-		self.text = self.text .. i
-		--print( input )
-		if self.onchange then self.onchange() end
-		return true
+		if self:checkCharset(i) then
+			self.text = self.text .. i
+			if self.onchange then self.onchange() end
+			return true
+		end
 	end
 	return false
 end

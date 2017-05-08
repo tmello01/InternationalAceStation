@@ -28,13 +28,13 @@ button.__index = button
 
 function button:new(data, parent)
 	local data = data or { }
-	local self = setmetatable(data, button)
+	local self = setmetatable(data, copy3(button))
 	self.__index = self
 	self.parent = parent or error("Button object needs a parent!")
 	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(16) end
 	self.sound = self.sound or Game.Sounds.ButtonForward
-	table.insert(parent.children,self)
+	table.insert(self.parent.children, self)
 	return self
 end
 

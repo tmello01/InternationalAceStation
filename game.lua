@@ -10,24 +10,98 @@ local function shuffleTable( t )
         t[i], t[j] = t[j], t[i]
     end
 end
-
+local function randomString( charset, len )
+	local endstr = ""
+	for i = 1, len do
+		local rnd = love.math.random(1,#charset)
+		endstr = endstr .. charset:sub(rnd,rnd)
+	end
+	return endstr
+end
 ui.state = "Menu"
 
 SHOWCHARMS = false
 SHOWDECKCHARMS = false
 
 Game = {
+	IsAdmin = function()
+		return Game.ConnectMode == "Offline" or Game.ConnectMode == "Host"
+	end,
+	InitializeCard = function(suit, value, x, y, flipped)
+		if Game.IsAdmin() then
+			local nid = Game.GenerateNetworkID()
+			card:new({suit = suit, value = value, x = x, y = y, flipped = flipped, networkID = nid})
+			local msg = Game.PackMessage("NewCard", {
+				s = suit,
+				v = value,
+				x = x,
+				y = y,
+				f = flipped,
+				n = nid
+			})
+			for i, v in pairs( Game.InternalServer.Clients ) do
+				Game.InternalServer.Server:sendto( msg, v.ip, v.port )
+			end
+		end
+	end,
+	InitializeDeck = function(x, y, cards)
+		if Game.IsAdmin() then
+			local nid = Game.GenerateNetworkID()
+			local cards = cards or {}
+			deck:new({x=x,y=y,cards=cards,networkID = nid})
+			local msg = Game.PackMessage("NewDeck", {
+				x = x,
+				y = y,
+				n = nid,
+				c = cards,
+			})
+			for i, v in pairs( Game.InternalServer.Clients ) do
+				Game.InternalServer.Server:sendto( msg, v.ip, v.port )
+			end
+		end
+	end,
+	GenerateNetworkID = function()
+		local uniqueid = false
+		local id
+		local charset = "0123456789abcdef"
+		repeat
+			uniqueid = true
+			id = randomString( charset, 8 )
+			for i, v in pairs( Game.Objects ) do
+				if v.id == id then
+					uniqueid = false
+				end
+			end
+		until uniqueid == true
+		return id
+	end,
 	ConnectMode = "Offline",
 	ServerInfo = {
 		IP = "",
 		Port = 22222
 	},
 	InternalServer = {
-		Server = "" --to be initialized later
+		Server = "", --to be initialized later
+		Objects = {
+
+		},
+		Clients = {},
 	},
 	InternalClient = {
 		Client = socket.udp()
 	},
+	SendToHost = function( datagram )
+		return Game.InternalClient.Client:sendto(Game.ServerInfo.IP, datagram)
+	end,
+	PackMessage = function( head, content )
+		return table.serialize({h=head,c=content})
+	end,
+	UnpackMessage = function( msg )
+		--[[
+			Right now this is a huge security risk but for now I couldn't be arsed.
+		]]--
+		return loadstring(msg)()
+	end,
 	Objects = {},
 	Zones = {},
 	Players = {},
@@ -266,6 +340,8 @@ Game = {
 			Game.Template = template
 		end
 	end,
+
+	Font = love.graphics.newFont( 16 ),
 
 	getState = function() return Game.Globals.Gamestate end,
 }

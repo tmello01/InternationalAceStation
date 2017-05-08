@@ -31,7 +31,7 @@ radio.__index = radio
 
 function radio:new( data, parent )
 	local data = data or {}
-	local self = setmetatable(data, radio)
+	local self = setmetatable(data, copy3(radio))
 	self.__index = self
 	self.parent = parent or error("Radio object needs a parent")
 	self.state = data.state or parent.state

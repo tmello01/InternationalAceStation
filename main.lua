@@ -24,6 +24,7 @@
 	Art by Armen Eghian, Justin Stevens, Dylan Ross, Lore Bellavance, and Alex Mullin	
 
 ]=]--
+require "copy"
 socket = socket or require "socket"
 local http = require("socket.http")
 
@@ -84,8 +85,62 @@ function love.update( dt )
 	if Game.ConnectMode == "Host" then
 		local data, ip, port = Game.InternalServer.Server:receivefrom()
 		if data then
-			if data == "AttemptConnect" then
-				Game.InternalServer.Server:sendto("ConnectAttemptSuccess", ip, port)
+			data = Game.UnpackMessage(data)
+			if data.h == "Connect" then
+				Game.InternalServer.Server:sendto(Game.PackMessage("ConnectAttemptSuccess",{}),ip,port)
+				table.insert(Game.InternalServer.Clients, {ip = ip, port = port})
+			elseif data.h == "MOVE" then
+				local nid = data.c.n;
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == nid then
+						v.x = data.c.x
+						v.y = data.c.y
+						return
+					end
+				end
+			elseif data.h == "REMOVE" then
+				local nid = data.c.n;
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == nid then
+						v:remove()
+						return
+					end
+				end
+			end
+		end
+	elseif Game.ConnectMode == "Client" then
+
+		local data, ip, port = Game.InternalClient.Client:receivefrom()
+		if data then
+		
+			print( data )
+			data = Game.UnpackMessage( data )
+			if data.h == "NewCard" then
+				card:new({
+					x = data.c.x,
+					y = data.c.y,
+					suit = data.c.s,
+					value = data.c.v,
+					flipped = data.c.f,
+					networkID = data.c.n,
+				})
+			elseif data.h == "MOVE" then
+				local nid = data.c.n;
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == nid then
+						v.x = data.c.x
+						v.y = data.c.y
+						return
+					end
+				end
+			elseif data.h == "REMOVE" then
+				local nid = data.c.n;
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == nid then
+						v:remove()
+						return
+					end
+				end
 			end
 		end
 	end
@@ -130,6 +185,10 @@ function love.draw()
 
 	touch.draw()
 	ui.drawAbove()
+	love.graphics.setFont(Game.Font)
+	if ui.state == "Main" then
+		love.graphics.print(Game.ConnectMode, 0, 0)
+	end
 end
 
 --don't judge

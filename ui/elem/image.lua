@@ -23,7 +23,7 @@ image.__index = image
 
 function image:new( data, parent )
 	local data = data or {}
-	local self = setmetatable(data, image)
+	local self = setmetatable(data, copy3(image))
 	self.__index = self
 	self.parent = parent or error("Image object needs a parent!")
 	self.state = data.state or parent.state

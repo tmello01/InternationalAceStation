@@ -100,6 +100,10 @@ local card = {
 	held = false,
 	type = "card",
 	tapTimer = timer.new(0.5),
+	networkID = "",
+
+
+
 
 	--[[
 		this:getPosition()
@@ -132,7 +136,8 @@ local card = {
 					table.insert( cards, {
 						suit = v.suit,
 						value = v.value,
-						flipped = v.flipped
+						flipped = v.flipped,
+						networkID = v.networkID
 					})
 				elseif v.type == "deck" then
 					for k, z in pairs( v.cards ) do
@@ -140,6 +145,7 @@ local card = {
 							suit = z.suit,
 							value = z.value,
 							flipped = z.flipped,
+							networkID = z.networkID
 						})
 					end
 				end
@@ -147,16 +153,24 @@ local card = {
 			table.insert( cards, {
 				value = self.value,
 				suit = self.suit,
-				flipped = self.flipped
+				flipped = self.flipped,
+				networkID = self.networkID
 			})
-			deck:new({x = self.x, y = self.y, cards=cards})
-			local sound = love.math.random(1,4)
-			Game.Sounds.CardPlace[sound]:stop()
-			Game.Sounds.CardPlace[sound]:play()
-			for i, v in pairs( cardsToStack ) do
-				v:remove()
+			if (Game.ConnectMode == "Offline" or Game.ConnectMode == "Host") then
+				deck:new({x = self.x, y = self.y, cards=cards, networkID = Game.GenerateNetworkID()})
+				local sound = love.math.random(1,4)
+				Game.Sounds.CardPlace[sound]:stop()
+				Game.Sounds.CardPlace[sound]:play()
+				for i, v in pairs( cardsToStack ) do
+					v:remove()
+				end
+				self:remove()
+			else
+				--Request server handles a deck stack between all the cards in the new deck
+				Game.SendToHost(table.serialize({
+					
+				}))
 			end
-			self:remove()
 			return
 		end
 	end,
@@ -217,6 +231,15 @@ local card = {
 		self.dragged = true
 		self.x = x-self.dragx
 		self.y = y-self.dragy
+		
+		if Game.IsAdmin() then
+			for i, v in pairs( Game.InternalServer.Clients ) do
+				Game.InternalServer.Server:sendto( Game.PackMessage("MOVE", {n = self.networkID, x = self.x, y = self.y}), v.ip, v.port)
+			end
+		else
+			Game.InternalClient.Client:sendto( Game.PackMessage("MOVE", {n = self.networkID, x = self.x, y = self.y}), Game.ServerInfo.IP, Game.ServerInfo.Port )
+		end
+
 		if self.x < love.graphics.getWidth()/4 then
 			if not SHOWCHARMS then
 				SHOWCHARMS = true
@@ -339,7 +362,7 @@ local card = {
 			Tweens.Final.ShowCharmsPanel.active = false
 			Tweens.Final.HideCharmsPanel.active = true
 			if self.dragged then
-
+				
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					if self.selected then
 						--[[for i = 1, #Game.Objects do
@@ -356,6 +379,13 @@ local card = {
 						end--]]
 					end
 					self:remove()
+					if Game.IsAdmin() then
+						for i, v in pairs( Game.InternalServer.Clients ) do
+							Game.InternalServer.Server:sendto( Game.PackMessage("REMOVE", {n = self.networkID}), v.ip, v.port)
+						end
+					else
+						Game.InternalClient.Client:sendto( Game.PackMessage("REMOVE", {n = self.networkID}), Game.ServerInfo.IP, Game.ServerInfo.Port)
+					end
 					SHOWCHARMS = false
 				end
 			end

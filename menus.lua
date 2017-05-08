@@ -13,6 +13,7 @@ local splashes = {
 	"Circumnavigating in 100 minutes or less!",
 	"All the people look like ants from here!",
 	"Did I leave the stove on?",
+	"Now with more boosters!",
 }
 local function makeMainMenu()
 	
@@ -119,7 +120,8 @@ local function makeGameTypePanel()
 		background = { 255, 255, 255 },
 		y = GameSelection.h/2,
 		substate = "JoinGame",
-		placeholder = "IP Address or Hostname"
+		placeholder = "Host Address",
+		charset = "1234567890."
 	})
 	GameSelection:add("button", {
 		y = middle + 50,
@@ -134,16 +136,19 @@ local function makeGameTypePanel()
 		--Attempt connection--
 		Game.InternalClient.Client = nil
 		Game.InternalClient.Client = socket.udp()
-		print( IPAddrInput.text )
 		Game.InternalClient.Client:settimeout(1)
-		local addr = socket.dns.toip(IPAddrInput.text)
+		local addr = true
 		if addr then
-			Game.InternalClient.Client:sendto("AttemptConnect", socket.dns.toip(IPAddrInput.text), 22222)
-			local data, ip, port = Game.InternalClient.Client:receive()
-			if data == "ConnectAttemptSuccess" then
-				--Connection Achieved!
-				print("connected!")
+			Game.InternalClient.Client:sendto(Game.PackMessage("Connect", {}), IPAddrInput.text, 22222)
+			local data, ip, port = Game.InternalClient.Client:receivefrom()
+			if data then data = Game.UnpackMessage(data) end
+			if data.h == "ConnectAttemptSuccess" then
+				--Connection Achieved!--
 				Game.InternalClient.Client:settimeout(0.01)
+				Game.ServerInfo.IP = IPAddrInput.text
+				Game.ServerInfo.Port = port
+				Game.ConnectMode = "Client"
+				ui.state = "Main"
 			else
 				print("could not connect", 1)
 			end
@@ -288,162 +293,198 @@ local function makeGameTypePanel()
 	end
 end
 
-local function makeGameAdminPanel()
+function MakeGameAdminPanel()
 
-	
-	local HiddenSize = love.graphics.getWidth()*0.075
-	local PanelW = love.graphics.getWidth()/4
+	AdminPanel = nil
 
-	AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, substate="Hidden"})
-	AdminPanel:add("text", {text = "ADD ITEMS", align="center", y = 45, font = ui.font(25)})
-	FlipCards = AdminPanel:add("radio", {label = "Flip cards?", y = 100+math.floor(AdminPanel.w/2), align="center"})
-	RandomDeck = AdminPanel:add("radio", {label = "Random deck?", active = true, y = 140+math.floor(AdminPanel.w/2), align="center"})
-	AdminPanel:add("button", {
-		w = math.ceil(AdminPanel.w/2),
-		h = math.floor(AdminPanel.w/2),
-		y = 80,
-		background = {33,150,243},
-		foreground = {255, 255, 255},
-		text = "Card",
-		sound = Game.Sounds.ButtonNew,
-	}).onclick = function()
-		card:new({
-			x = love.math.random(0, love.graphics.getWidth()*0.75),
-			y = love.math.random(0, love.graphics.getHeight()-100),
-			suit = suits[love.math.random(1,4)],
-			value = values[love.math.random(1,13)],
-			flipped = FlipCards.active,
+	if Game.ConnectMode == "Offline" or Game.ConnectMode == "Host" then
+		local HiddenSize = love.graphics.getWidth()*0.075
+		local PanelW = love.graphics.getWidth()/4
+
+		AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, substate="Hidden"})
+		
+		AdminPanel:add("button", {
+			w = AdminPanel.w,
+			background = hex2rgb("#B71C1C"),
+			foreground = { 255, 255, 255 },
+			text = "Return to Menu",
+			h = 75,
+			y = AdminPanel.h - 75,
+		}).onclick = function()
+			AdminPanel.substate = "Quit"
+		end
+		AdminPanel:add("button", {
+			w = AdminPanel.w/2,
+			h = AdminPanel.w/2,
+			y = 100,
+			background = hex2rgb("#4caf50"),			
+			font = ui.font(36, "FontAwesome"),
+			text = fontAwesome['fa-plus'],
+		}).onclick = function()
+			Game.InitializeCard()
+		end
+		AdminPanel:add("button", {
+			w = AdminPanel.w/2,
+			h = AdminPanel.w/2,
+			x = AdminPanel.w/2,
+			y = 100,
+			background = hex2rgb("#ffeb3b"),
+			foreground = { 0, 0, 0 },
+			font = ui.font(36, "FontAwesome"),
+			text = fontAwesome['fa-gear'],
 		})
-	end
-	AdminPanel:add("button", {
-		x = math.ceil(AdminPanel.w/2),
-		y = 80,
-		w = math.floor(AdminPanel.w/2),
-		h = math.floor(AdminPanel.w/2),
-		background = {56, 142, 60},
-		foreground = {255, 255, 255},
-		text = "Deck",
-		sound = Game.Sounds.ButtonNew,
-	}).onclick = function()
-		if RandomDeck.active then --we'll fix this later.
-			local c = {}
-			for i = 1, love.math.random( 20, 30 ) do
-				c[#c+1] = {
-					suit = suits[love.math.random(1,4)],
-					value = values[love.math.random(1,13)],
-					flipped = FlipCards.active,
-				}
-			end
-			deck:new({cards=c, x = love.math.random(0,200), y = love.math.random(0, 200)})
-		else
-			local c = {}
-			local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
-			local suits = { "diamonds", "clubs", "hearts", "spades" }
-			for i, v in pairs( suits ) do
-				for k, z in pairs( values ) do
-					table.insert( c, {
-						value = z,
-						suit = v,
-						flipped = FlipCards.active
-					})
-				end
-			end
-			deck:new({cards=c, x = love.math.random(0,200), y = love.math.random(0, 200)})
+		AdminPanel:add("button", {
+			w = 55,
+			h = 100,
+			x = AdminPanel.w-55,
+			background = hex2rgb("#B71C1C"),
+			font = ui.font(26, "FontAwesome"),
+			text = fontAwesome['fa-angle-double-right'],
+			sound = Game.Sounds.ButtonBackward,
+		}).onclick = function()
+			AdminPanel.substate = "Hidden"
+			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
+			Tweens.Final.HideAdminPanel.active = true
 		end
-	end
-	AdminPanel:add("button", {
-		w = AdminPanel.w,
-		background = hex2rgb("#B71C1C"),
-		foreground = { 255, 255, 255 },
-		text = "Return to Menu",
-		h = 75,
-		y = AdminPanel.h - 75,
-	}).onclick = function()
-		AdminPanel.substate = "Quit"
-	end
-	AdminPanel:add("button", {
-		w = 35,
-		h = 35,
-		x = AdminPanel.w-35,
-		background = hex2rgb("#B71C1C"),
-		font = ui.font(16, "FontAwesome"),
-		text = fontAwesome['fa-times'],
-		sound = Game.Sounds.ButtonBackward,
-	}).onclick = function()
-		AdminPanel.substate = "Hidden"
-		--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
-		Tweens.Final.HideAdminPanel.active = true
-	end
-	AdminPanel:add("button", {
-		w = AdminPanel.w,
-		h = 50,
-		y = AdminPanel.h-125,
-		background = hex2rgb("#E53935"),
-		text = "Reset Board",
-	}).onclick = function()
-		if #Game.Template == 0 then
+		AdminPanel:add("button", {
+			w = HiddenSize,
+			h = AdminPanel.h,
+			background = {210, 210, 210},
+			foreground = {0, 0, 0},
+			text = fontAwesome['fa-angle-double-left'],
+			font = ui.font(30, "FontAwesome"),
+			substate = "Hidden",
+		}).onclick = function()
+			AdminPanel.substate = "Main"
+			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()/4
+			Tweens.Final.ShowAdminPanel.active = true
+		end
+		AdminPanel:add("text", {
+			x = 10,
+			y = 10,
+			font = ui.font(35, "Roboto-Bold"),
+			text = "Quit?",
+			align = "center",
+			substate = "Quit"
+		})
+		AdminPanel:add("text", {
+			text = "Are you sure you want to quit? All of your progress will be lost.",
+			y = 100,
+			align = "center",
+			substate = "Quit",
+			font = ui.font(25),
+		})
+		AdminPanel:add("button", {
+			w = AdminPanel.w,
+			h = 75,
+			y = AdminPanel.h-75,
+			background = hex2rgb("#F44336"),
+			text = "QUIT",
+			font = ui.font(18),
+			substate = "Quit",
+			sound = Game.Sounds.ButtonBackward,
+		}).onclick = function()
+			AdminPanel.substate = "Hidden"
+			AdminPanel.x = love.graphics.getWidth()-HiddenSize
+			ui.state = "Menu"
 			Game.Objects = {}
-		else
-			Game.LoadTemplate(Game.Template, true)
+			SplashText.text = "\"" .. splashes[love.math.random(1,#splashes)] .. "\""
+		end
+		AdminPanel:add("button",{
+			w = AdminPanel.w,
+			h = 125,
+			y = AdminPanel.h-200,
+			background = hex2rgb("#2196F3"),
+			font = ui.font(18),
+			text = "CANCEL",
+			substate = "Quit",
+		}).onclick = function()
+			AdminPanel.substate = "Main"
+		end
+	else
+		AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, substate="Hidden"})
+		
+		AdminPanel:add("button", {
+			w = AdminPanel.w,
+			background = hex2rgb("#B71C1C"),
+			foreground = { 255, 255, 255 },
+			text = "Return to Menu",
+			h = 75,
+			y = AdminPanel.h - 75,
+		}).onclick = function()
+			AdminPanel.substate = "Quit"
+		end
+		AdminPanel:add("button", {
+			w = 55,
+			h = 55,
+			x = AdminPanel.w-55,
+			background = hex2rgb("#B71C1C"),
+			font = ui.font(16, "FontAwesome"),
+			text = fontAwesome['fa-times'],
+			sound = Game.Sounds.ButtonBackward,
+		}).onclick = function()
+			AdminPanel.substate = "Hidden"
+			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
+			Tweens.Final.HideAdminPanel.active = true
+		end
+		AdminPanel:add("button", {
+			w = HiddenSize,
+			h = AdminPanel.h,
+			background = {210, 210, 210},
+			foreground = {0, 0, 0},
+			text = fontAwesome['fa-angle-double-left'],
+			font = ui.font(30, "FontAwesome"),
+			substate = "Hidden",
+		}).onclick = function()
+			AdminPanel.substate = "Main"
+			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()/4
+			Tweens.Final.ShowAdminPanel.active = true
+		end
+		AdminPanel:add("text", {
+			x = 10,
+			y = 10,
+			font = ui.font(35, "Roboto-Bold"),
+			text = "Quit?",
+			align = "center",
+			substate = "Quit"
+		})
+		AdminPanel:add("text", {
+			text = "Are you sure you want to quit? All of your progress will be lost.",
+			y = 100,
+			align = "center",
+			substate = "Quit",
+			font = ui.font(25),
+		})
+		AdminPanel:add("button", {
+			w = AdminPanel.w,
+			h = 75,
+			y = AdminPanel.h-75,
+			background = hex2rgb("#F44336"),
+			text = "QUIT",
+			font = ui.font(18),
+			substate = "Quit",
+			sound = Game.Sounds.ButtonBackward,
+		}).onclick = function()
+			AdminPanel.substate = "Hidden"
+			AdminPanel.x = love.graphics.getWidth()-HiddenSize
+			ui.state = "Menu"
+			Game.Objects = {}
+			SplashText.text = "\"" .. splashes[love.math.random(1,#splashes)] .. "\""
+		end
+		AdminPanel:add("button",{
+			w = AdminPanel.w,
+			h = 125,
+			y = AdminPanel.h-200,
+			background = hex2rgb("#2196F3"),
+			font = ui.font(18),
+			text = "CANCEL",
+			substate = "Quit",
+		}).onclick = function()
+			AdminPanel.substate = "Main"
 		end
 	end
-	AdminPanel:add("button", {
-		w = HiddenSize,
-		h = AdminPanel.h,
-		background = {210, 210, 210},
-		foreground = {0, 0, 0},
-		text = fontAwesome['fa-angle-double-left'],
-		font = ui.font(30, "FontAwesome"),
-		substate = "Hidden",
-	}).onclick = function()
-		AdminPanel.substate = "Main"
-		--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()/4
-		Tweens.Final.ShowAdminPanel.active = true
-	end
-	AdminPanel:add("text", {
-		x = 10,
-		y = 10,
-		font = ui.font(35, "Roboto-Bold"),
-		text = "Quit?",
-		align = "center",
-		substate = "Quit"
-	})
-	AdminPanel:add("text", {
-		text = "Are you sure you want to quit? All of your progress will be lost.",
-		y = 100,
-		align = "center",
-		substate = "Quit",
-		font = ui.font(25),
-	})
-	AdminPanel:add("button", {
-		w = AdminPanel.w,
-		h = 75,
-		y = AdminPanel.h-75,
-		background = hex2rgb("#F44336"),
-		text = "QUIT",
-		font = ui.font(18),
-		substate = "Quit",
-		sound = Game.Sounds.ButtonBackward,
-	}).onclick = function()
-		AdminPanel.substate = "Hidden"
-		AdminPanel.x = love.graphics.getWidth()-HiddenSize
-		ui.state = "Menu"
-		Game.Objects = {}
-		SplashText.text = "\"" .. splashes[love.math.random(1,#splashes)] .. "\""
-	end
-	AdminPanel:add("button",{
-		w = AdminPanel.w,
-		h = 125,
-		y = AdminPanel.h-200,
-		background = hex2rgb("#2196F3"),
-		font = ui.font(18),
-		text = "CANCEL",
-		substate = "Quit",
-	}).onclick = function()
-		AdminPanel.substate = "Main"
-	end
-
 end
+
 
 local function makeTemplateBasePanel()
 
@@ -652,7 +693,7 @@ end
 function makeMenus()
 	makeMainMenu()
 	makeGameTypePanel()
-	makeGameAdminPanel()
+	MakeGameAdminPanel()
 	makeTemplateBasePanel()
 	--makeTemplateDeckPanel()
 end

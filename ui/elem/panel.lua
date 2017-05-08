@@ -44,7 +44,7 @@ end
 
 function panel:add(t,data)
 	if ui.elements[t] then
-		return ui.elements[t]:new(data,self)
+		return ui.elements[t]:new(copy3(data),self)
 	end
 end
 

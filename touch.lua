@@ -79,6 +79,11 @@ function t:updatePosition( x, y )
 		local deadzone = 4.4 * (love.graphics.getWidth()/800)
 		if not self.pastDeadzone then
 			self.pastDeadzone = math.abs(x-self.x) > deadzone or math.abs(y-self.y) > deadzone
+			if self.pastDeadzone then
+				for i, v in pairs( Game.InternalServer.Clients ) do
+					Game.InternalServer.Server:sendto( Game.PackMessage("MOVE", {n = self.networkID, x = self.x, y = self.y}), v.ip, v.port)
+				end
+			end
 		else	
 			self.x = x or self.x
 			self.y = y or self.y

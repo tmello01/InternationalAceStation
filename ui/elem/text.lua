@@ -19,8 +19,8 @@ text.__index = text
 
 function text:new(data, parent)
 	local data = data or { }
-	local self = setmetatable(data, text)
-	self.__index = self
+	local self = copy3(text)
+	self = setmetatable(data,self)
 	self.parent = parent or error("Text object needs a parent!")
 	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(16) end

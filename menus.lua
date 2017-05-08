@@ -353,6 +353,21 @@ local function makeGameAdminPanel()
 		end
 	end
 	AdminPanel:add("button", {
+		x = math.ceil((AdminPanel.w/2)-10),
+		y = 70,
+		w = math.floor(AdminPanel.w/2),
+		h = math.floor(AdminPanel.w/2),
+		background = {56,142,60},
+		foreground = {255,255,255},
+		text = "Chip"
+	}).onClick = function()
+		chip:new({
+			x = love.math.random(0, love.graphics.getWidth()*0.75),
+			y = love.math.random(0, love.graphics.getHeight()-100),
+			chipColor = chipColors[love.math.random(0,10)],
+		})
+	end
+	AdminPanel:add("button", {
 		w = AdminPanel.w,
 		background = hex2rgb("#B71C1C"),
 		foreground = { 255, 255, 255 },

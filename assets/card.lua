@@ -139,6 +139,7 @@ local card = {
 						flipped = v.flipped,
 						networkID = v.networkID
 					})
+					v:remove()
 				elseif v.type == "deck" then
 					for k, z in pairs( v.cards ) do
 						table.insert( cards, { 
@@ -148,6 +149,7 @@ local card = {
 							networkID = z.networkID
 						})
 					end
+					v:remove()
 				end
 			end
 			table.insert( cards, {
@@ -162,9 +164,6 @@ local card = {
 				local sound = love.math.random(1,4)
 				Game.Sounds.CardPlace[sound]:stop()
 				Game.Sounds.CardPlace[sound]:play()
-				for i, v in pairs( cardsToStack ) do
-					v:remove()
-				end
 				self:remove()
 			else
 				local n = {}
@@ -195,6 +194,11 @@ local card = {
 		self.flipped = not self.flipped
 		if Game.IsAdmin() then
 			Game.SendToClients( "FLIP", {
+				n = self.networkID,
+				f = self.flipped,
+			})
+		else
+			Game.SendToHost( "FLIP", {
 				n = self.networkID,
 				f = self.flipped,
 			})

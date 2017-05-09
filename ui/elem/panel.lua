@@ -20,13 +20,12 @@ local panel = {
 panel.__index = panel
 
 function panel:new(data, parent)
-	local data = data or { }
+	local data = copy3(data) or { }
 	local self = setmetatable(data, panel)
 	self.state = data.state or "Main"
-	self.__index = self
 	if parent then
-		self.parent = parent
 		table.insert(parent.children,self)
+		self.parent = parent
 	else
 		self.isroot = true
 		table.insert(ui.roots, self)
@@ -37,7 +36,9 @@ end
 function panel:update( dt )
 	if ui.checkState(self) then
 		for i, v in pairs( self.children ) do
-			if v.update then v:update( dt ) end
+			if v ~= self then
+				if v.update then v:update( dt ) end
+			end
 		end
 	end
 end
@@ -54,7 +55,9 @@ function panel:draw()
 		love.graphics.rectangle("fill",ui.getAbsX(self),ui.getAbsY(self),self.w,self.h)
 
 		for i, v in pairs( self.children ) do
-			if v.draw then v:draw() end
+			if v ~= self then
+				if v.draw then v:draw() end
+			end
 		end
 		love.graphics.setColor( 255, 255, 255 )
 	end
@@ -66,7 +69,9 @@ function panel:mousepressed( x, y, button )
 		local ax, ay = ui.getAbsX(self),ui.getAbsY(self)
 		if x >= ax and x <= ax + self.w and y >= ay and y <= ay + self.h then
 			for i, v in pairs( self.children ) do
-				if v.mousepressed then v:mousepressed( x,y,button ) end
+				if v ~= self then
+					if v.mousepressed then v:mousepressed( x,y,button ) end
+				end
 			end
 			return true
 		end
@@ -78,7 +83,9 @@ function panel:mousereleased( x, y, button )
 		local ax, ay = ui.getAbsX(self),ui.getAbsY(self)
 		if x >= ax and x <= ax + self.w and y >= ay and y <= ay + self.h then
 			for i, v in pairs( self.children ) do
-				if v.mousereleased then v:mousereleased( x,y,button ) end
+				if v ~= self then
+					if v.mousereleased then v:mousereleased( x,y,button ) end
+				end
 			end
 		end
 	end
@@ -88,13 +95,13 @@ end
 function panel:textinput( text )
 	if ui.checkState( self ) then
 		for i, v in pairs( self.children ) do
-
-			if v.input then 
-				if v:input(text) then
-					return true
+			if v ~= self then
+				if v.input then 
+					if v:input(text) then
+						return true
+					end
 				end
 			end
-
 		end
 	end
 	return false
@@ -102,9 +109,11 @@ end
 function panel:keypressed( key )
 	if ui.checkState( self ) then
 		for i, v in pairs( self.children ) do
-			if v.keypressed then 
-				if v:keypressed( key ) then
-					return true
+			if v ~= self then
+				if v.keypressed then 
+					if v:keypressed( key ) then
+						return true
+					end
 				end
 			end
 		end
@@ -113,7 +122,9 @@ end
 function panel:keyreleased( key )
 	if ui.checkState( self ) then
 		for i, v in pairs( self.children ) do
-			if v.keyreleased then v:keyreleased( key ) end
+			if v ~= self then
+				if v.keyreleased then v:keyreleased( key ) end
+			end
 		end
 	end
 end

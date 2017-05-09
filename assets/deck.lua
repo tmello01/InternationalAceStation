@@ -83,16 +83,7 @@ local deck = {
 			for i, v in pairs( cardsToStack ) do
 				v:remove()
 			end
-			local nid = Game.GenerateNetworkID()
-			newdeck = deck:new({cards=cards, x = self.x, y=self.y, networkID = nid})
-			if Game.IsAdmin() then
-				Game.SendToClients("NewDeck", {
-					x = self.x,
-					y = self.y,
-					c = cards,
-					n = nid,
-				})
-			end
+			Game.InitializeDeck(self.x, self.y, cards)
 			local sound = love.math.random(1,4)
 			Game.Sounds.CardPlace[sound]:stop()
 			Game.Sounds.CardPlace[sound]:play()
@@ -267,7 +258,7 @@ local deck = {
 					shuffleTable(self.cards)
 					if Game.IsAdmin() then
 						
-						Game.SendToClients("SHUFFLE", {n = self.networkID, x = self.startdx, y = self.startdy})
+						Game.SendToClients("SHUFFLE", {c=self.cards, n = self.networkID, x = self.startdx, y = self.startdy})
 						self.gotostart = tween.new(0.3, self, {x = self.startdx, y = self.startdy}, "inOutExpo")
 						self.tweenback = true
 					
@@ -279,15 +270,15 @@ local deck = {
 					if #self.cards == 2 then
 						local c1 = self.cards[1]
 						local c2 = self.cards[2]
-						card:new({value=c1.value,suit=c1.suit,x=self.startdx-DeckWidth,y=self.startdy,flipped=c1.flipped})
-						card:new({value=c2.value,suit=c2.suit,x=self.startdx+DeckWidth,y=self.startdy,flipped=c2.flipped})
+						Game.InitializeCard( c1.suit, c1.value, self.x, self.y, c1.flipped, self.startdx-DeckWidth-2, self.startdy )
+						Game.InitializeCard( c2.suit, c2.value, self.x, self.y, c2.flipped, self.startdx+DeckWidth+2, self.startdy )
 						self:remove()
 						return
 					elseif #self.cards == 3 then
 						local c1 = self.cards[1]
-						card:new({value=c1.value,suit=c1.suit,x=self.startdx-DeckWidth,y=self.startdy,flipped=c1.flipped})
+						Game.InitializeCard( c1.suit, c1.value, self.x, self.y, c1.flipped, self.startdx-DeckWidth-2, self.startdy )
 						table.remove(self.cards, 1)
-						deck:new({cards=self.cards,x=self.startdx+DeckWidth,y=self.startdy})
+						Game.InitializeDeck(self.x,self.y,self.cards, self.startdx+DeckWidth+2, self.startdy )
 						self:remove()
 						return
 					end
@@ -310,8 +301,8 @@ local deck = {
 							})
 						end
 					end
-					deck:new({cards=d1,x=self.x, y=self.y, tweentox = self.startdx-DeckWidth-2, tweentoy = self.startdy})
-					deck:new({cards=d2,x=self.x, y=self.y, tweentox = self.startdx+DeckWidth+2, tweentoy = self.startdy})
+					Game.InitializeDeck(self.x, self.y, d1, self.startdx-DeckWidth-2, self.startdy)
+					Game.InitializeDeck(self.x, self.y, d2, self.startdx+DeckWidth+2, self.startdy)
 					self:remove()
 					return
 				end
@@ -367,6 +358,7 @@ function deck:new( data )
 		self.tweento = true
 		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
 	end
+	print( self.tweentox, self.x )
 	table.insert( Game.Objects, self )
 	return self
 end

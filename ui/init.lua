@@ -94,7 +94,7 @@ function ui.getRadioGroup(group)
 end
 
 function ui.new(data)
-	return ui.elements.panel:new(data)
+	return ui.elements.panel:new(copy3(data))
 end
 
 function ui.update( dt )

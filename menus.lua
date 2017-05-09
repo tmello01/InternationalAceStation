@@ -138,11 +138,10 @@ local function makeGameTypePanel()
 		Game.InternalClient.Client = nil
 		Game.InternalClient.Client = socket.udp()
 		Game.InternalClient.Client:settimeout(1)
-		local addr = true
-		if addr then
-			Game.InternalClient.Client:sendto(Game.PackMessage("Connect", {}), IPAddrInput.text, 22222)
-			local data, ip, port = Game.InternalClient.Client:receivefrom()
-			if data then data = Game.UnpackMessage(data) end
+		Game.InternalClient.Client:sendto(Game.PackMessage("Connect", {}), IPAddrInput.text, 22222)
+		local data, ip, port = Game.InternalClient.Client:receivefrom()
+		if data then 
+			data = Game.UnpackMessage(data)
 			if data.h == "ConnectAttemptSuccess" then
 				--Connection Achieved!--
 				Game.InternalClient.Client:settimeout(0.01)
@@ -159,21 +158,19 @@ local function makeGameTypePanel()
 							flipped = v.f,
 							value = v.v,
 							suit = v.s,
-						})
+						}):topDrawOrder()
 					elseif v.t == "d" then
 						deck:new({
 							networkID = v.n,
 							x = v.x,
 							y = v.y,
 							cards = v.c,
-						})
+						}):topDrawOrder()
 					end
 				end
-			else
-				print("could not connect", 1)
 			end
 		else
-			print("could not connect", 2)
+			print("Connection Failed: No response from " .. IPAddrInput.text)
 		end
 	end
 	GameSelection:add("button", {
@@ -283,9 +280,10 @@ local function makeGameTypePanel()
 		local hostmode = ui.getRadioGroup("ServerClient")
 		if hostmode == MultiPlayer then
 			Game.InternalServer.Server = socket.udp()
-			Game.InternalServer.Server:setsockname(socket.dns.toip("localhost"), 22222)
+			Game.InternalServer.Server:setsockname("*", 22222)
 			Game.InternalServer.Server:settimeout(0.01)
 			Game.ConnectMode = "Host"
+			
 		else
 			--No internal server is initialized--
 			Game.ConnectMode = "Offline"
@@ -317,12 +315,23 @@ function MakeGameAdminPanel()
 
 	AdminPanel = nil
 
-	if Game.ConnectMode == "Offline" or Game.ConnectMode == "Host" then
+	if Game.IsAdmin() then
 		local HiddenSize = love.graphics.getWidth()*0.075
 		local PanelW = love.graphics.getWidth()/4
 
 		AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, substate="Hidden"})
-		
+		local addr = AdminPanel:add("panel", {
+			w = PanelW - 55,
+			h = 100,
+			background = hex2rgb("#673AB7"),
+		})
+		addr:add("text", {
+			text = "IP: " .. Game.GetNetworkAddress(),
+			font = ui.font(40, "Roboto-Light"),
+			foreground = { 255, 255, 255 },
+			y = math.ceil(addr.h/2 - ui.font(40, "Roboto-Light"):getHeight()/2),
+			align = "center",
+		})
 		AdminPanel:add("button", {
 			w = AdminPanel.w,
 			background = hex2rgb("#B71C1C"),
@@ -334,10 +343,10 @@ function MakeGameAdminPanel()
 			AdminPanel.substate = "Quit"
 		end
 		AdminPanel:add("button", {
-			w = AdminPanel.w/2,
+			w = AdminPanel.w,
 			h = AdminPanel.w/2,
 			y = 100,
-			background = hex2rgb("#4caf50"),			
+			background = hex2rgb("#2196F3"),			
 			font = ui.font(36, "FontAwesome"),
 			text = fontAwesome['fa-plus'],
 		}).onclick = function()
@@ -346,8 +355,16 @@ function MakeGameAdminPanel()
 		AdminPanel:add("button", {
 			w = AdminPanel.w/2,
 			h = AdminPanel.w/2,
+			y = 100 + AdminPanel.w/2,
+			background = hex2rgb("#009688"),
+			font = ui.font(36, "FontAwesome"),
+			text = fontAwesome['fa-eye'],
+		})
+		AdminPanel:add("button", {
+			w = AdminPanel.w/2,
+			h = AdminPanel.w/2,
 			x = AdminPanel.w/2,
-			y = 100,
+			y = 100 + AdminPanel.w/2,
 			background = hex2rgb("#ffeb3b"),
 			foreground = { 0, 0, 0 },
 			font = ui.font(36, "FontAwesome"),

@@ -111,6 +111,10 @@ function love.update( dt )
 				end
 				Game.InternalServer.Server:sendto(Game.PackMessage("ConnectAttemptSuccess",tableContents),ip,port)
 				table.insert(Game.InternalServer.Clients, {ip = ip, port = port})
+			elseif data.h == "NewCard" then
+				Game.InitializeCard( data.c.s, data.c.v, data.c.x, data.c.y, data.c.f, data.c.t, data.c.ty )
+			elseif data.h == "NewDeck" then
+				Game.InitializeDeck( data.c.x, data.c.y, data.c.c, data.c.t, data.c.ty )
 			elseif data.h == "MOVE" then
 				local nid = data.c.n;
 				for i, v in pairs( Game.Objects ) do
@@ -162,19 +166,23 @@ function love.update( dt )
 					value = data.c.v,
 					flipped = data.c.f,
 					networkID = data.c.n,
-					tweentox = data.c.t or nil,
-				})
+					tweentox = data.c.t,
+					tweentoy = data.c.ty,
+				}):topDrawOrder()
 			elseif data.h == "NewDeck" then
 				deck:new({
 					x = data.c.x,
 					y = data.c.y,
 					networkID = data.c.n,
 					cards = data.c.c,
-				})
+					tweentox = data.c.t,
+					tweentoy = data.c.ty,
+				}):topDrawOrder()
 			elseif data.h == "SHUFFLE" then
 				for i, v in pairs( Game.Objects ) do
 					if v.networkID == data.c.n then
-						v.gotostart = tween.new(0.3, self, {x = self.startdx, y = self.startdy}, "inOutExpo")
+						v.cards = data.c.c
+						v.gotostart = tween.new(0.3, v, {x = data.c.x, y = data.c.y}, "inOutExpo")
 						v.tweenback = true
 						return
 					end
@@ -219,8 +227,6 @@ function love.update( dt )
 
 end
 
-
-
 function love.draw()
 
 	ui.draw()
@@ -258,9 +264,6 @@ function love.draw()
 	touch.draw()
 	ui.drawAbove()
 	love.graphics.setFont(Game.Font)
-	if ui.state == "Main" then
-		love.graphics.print(Game.ConnectMode, 0, 0)
-	end
 end
 
 --don't judge

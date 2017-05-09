@@ -26,11 +26,22 @@ SHOWDECKCHARMS = false
 Game = {
 	IsAdmin = function()
 		return Game.ConnectMode == "Offline" or Game.ConnectMode == "Host"
+	end,	
+	GetNetworkAddress = function()
+		--The address and port are completely arbitrary.
+		local sock = socket.udp()
+		sock:setpeername("192.168.1.122","3102")
+		--[[
+			Will return networkAddress, port
+		]]--
+		return sock:getsockname()
 	end,
-	InitializeCard = function(suit, value, x, y, flipped, tweentox)
+	InitializeCard = function(suit, value, x, y, flipped, tweentox, tweentoy)
 		if Game.IsAdmin() then
 			local nid = Game.GenerateNetworkID()
-			card:new({suit = suit, value = value, x = x, y = y, flipped = flipped, networkID = nid, tweentox = tweentox}):topDrawOrder()
+			
+			local tweento = (tweentox ~= nil or tweentoy ~= nil)
+			card:new({suit = suit, value = value, x = x, y = y, flipped = flipped, networkID = nid, tweentox = tweentox, tweentoy = tweentoy, tweento = tweento}):topDrawOrder()
 			Game.SendToClients( "NewCard", {
 				s = suit,
 				v = value,
@@ -38,20 +49,42 @@ Game = {
 				y = y,
 				f = flipped,
 				n = nid,
-				t = tweentox or nil
+				t = tweentox or nil,
+				ty = tweentoy or nil
+			})
+		else
+			Game.SendToHost("NewCard", {
+				s = suit,
+				v = value,
+				x = x,
+				y = y,
+				f = flipped,
+				t = tweentox or nil,
+				ty = tweentoy or nil,
 			})
 		end
 	end,
-	InitializeDeck = function(x, y, cards)
+	InitializeDeck = function(x, y, cards, tweentox, tweentoy)
 		if Game.IsAdmin() then
 			local nid = Game.GenerateNetworkID()
 			local cards = cards or {}
-			deck:new({x=x,y=y,cards=cards,networkID = nid})
+			local tweento = (tweentox ~= nil or tweentoy ~= nil)
+			deck:new({x=x,y=y,cards=cards,networkID = nid, tweentox = tweentox, tweentoy = tweentoy, tweento = tweento}):topDrawOrder()
 			Game.SendToClients("NewDeck", {
 				x = x,
 				y = y,
 				n = nid,
 				c = cards,
+				t = tweentox or nil,
+				ty = tweentoy or nil,
+			})
+		else
+			Game.SendToHost("NewDeck", {
+				x = x,
+				y = y,
+				c = cards,
+				t = tweentox or nil,
+				ty = tweentoy or nil
 			})
 		end
 	end,
@@ -86,11 +119,14 @@ Game = {
 		Client = socket.udp()
 	},
 	SendToHost = function( head, contents )
-		return Game.InternalClient.Client:sendto( Game.PackMessage( head, contents ), Game.ServerInfo.IP, Game.ServerInfo.Port )
+
+		return (Game.InternalClient.Client and Game.InternalClient.Client:sendto( Game.PackMessage( head, contents ), Game.ServerInfo.IP, Game.ServerInfo.Port ))
 	end,
 	SendToClients = function( head, contents )
-		for i, v in pairs( Game.InternalServer.Clients ) do
-			Game.InternalServer.Server:sendto( Game.PackMessage( head, contents ), v.ip, v.port )
+		if Game.InternalServer.Server then
+			for i, v in pairs( Game.InternalServer.Clients ) do
+				Game.InternalServer.Server:sendto( Game.PackMessage( head, contents ), v.ip, v.port )
+			end
 		end
 	end,
 	PackMessage = function( head, content )

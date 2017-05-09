@@ -25,6 +25,7 @@ local deck = {
 	y = 0,
 	w = DeckWidth,
 	h = DeckHeight,
+	networkID = "",
 	istemplate = false,
 	visible = true,
 	dragx = 0, --Drag X position
@@ -82,7 +83,16 @@ local deck = {
 			for i, v in pairs( cardsToStack ) do
 				v:remove()
 			end
-			newdeck = deck:new({cards=cards, x = self.x, y=self.y})
+			local nid = Game.GenerateNetworkID()
+			newdeck = deck:new({cards=cards, x = self.x, y=self.y, networkID = nid})
+			if Game.IsAdmin() then
+				Game.SendToClients("NewDeck", {
+					x = self.x,
+					y = self.y,
+					c = cards,
+					n = nid,
+				})
+			end
 			local sound = love.math.random(1,4)
 			Game.Sounds.CardPlace[sound]:stop()
 			Game.Sounds.CardPlace[sound]:play()
@@ -94,42 +104,32 @@ local deck = {
 		if #self.cards > 2 then
 			--Drop card
 			local c = self.cards[#self.cards] --the card we're dropping
-			local newcard = card:new({
-				suit = c.suit,
-				value = c.value,
-				x = self.x,
-				y = self.y,
-				flipped = c.flipped,
-				tweentox = self.x + self.w + 50,
-			})
+			
 			for i, v in pairs( self.cards ) do
 				if v == c then
 					table.remove( self.cards, i )
 					break
 				end
 			end
-			newcard:topDrawOrder()
+			if Game.IsAdmin() then
+				Game.SendToClients("UPDATEDECK", {n = self.networkID, c = self.cards})
+				Game.InitializeCard(c.suit, c.value, self.x, self.y, c.flipped, self.x + self.w + 50)
+			else
+				Game.SendToHost("DRAWCARD", {n = self.networkID})
+			end
+			
 			print( #self.cards )
 		else
 			local c1 = self.cards[1]
 			local c2 = self.cards[2]
 			print( table.serialize( self.cards ) )
 			if c1 and c2 then
-				card:new({
-					suit = c1.suit,
-					value = c1.value,
-					x = self.x,
-					y = self.y,
-					flipped = c1.flipped,
-				})
-				card:new({
-					suit = c2.suit,
-					value = c2.value,
-					x = self.x,
-					y = self.y,
-					flipped = c2.flipped,
-					tweentox = self.x + self.w + 50,
-				})
+				if Game.IsAdmin() then
+					Game.InitializeCard(c1.suit,c1.value,self.x,self.y,c1.flipped)
+					Game.InitializeCard(c2.suit,c2.value,self.x,self.y,c2.flipped,self.x + self.w + 50)
+				else
+					Game.SendToHost("DRAWCARD", {n = self.networkID})
+				end
 				self:remove()
 				return
 			end
@@ -143,6 +143,11 @@ local deck = {
 		for i, v in pairs( Game.Objects ) do
 			if v == self then
 				table.remove( Game.Objects, i )
+				if Game.IsAdmin() then
+					Game.SendToClients("REMOVE", {n = self.networkID})
+				else
+					Game.SendToHost("REMOVE", {n = self.networkID})
+				end
 				break
 			end
 		end
@@ -156,6 +161,11 @@ local deck = {
 		self.dragged = true
 		self.x = x-self.dragx
 		self.y = y-self.dragy
+		if Game.IsAdmin() then
+			Game.SendToClients("MOVE", {n = self.networkID, x = self.x, y = self.y})
+		else
+			Game.SendToHost("MOVE", {n = self.networkID, x = self.x, y = self.y})
+		end
 		if self.x < love.graphics.getWidth()/4 then
 			if not SHOWCHARMS then
 				SHOWCHARMS = true
@@ -255,9 +265,15 @@ local deck = {
 					self:remove()
 				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()/2-25 and self.y <= love.graphics.getHeight()/2-25 + w then
 					shuffleTable(self.cards)
-
-					self.gotostart = tween.new(0.3, self, {x = self.startdx, y = self.startdy}, "inOutExpo")
-					self.tweenback = true
+					if Game.IsAdmin() then
+						
+						Game.SendToClients("SHUFFLE", {n = self.networkID, x = self.startdx, y = self.startdy})
+						self.gotostart = tween.new(0.3, self, {x = self.startdx, y = self.startdy}, "inOutExpo")
+						self.tweenback = true
+					
+					else
+						Game.SendToHost("SHUFFLE", {n = self.networkID, x = self.startdx, y = self.startdy})
+					end
 				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()-115 and self.y <= love.graphics.getHeight() -15 then
 					Game.Sounds.CardSlide[love.math.random(5,8)]:play()
 					if #self.cards == 2 then
@@ -352,7 +368,6 @@ function deck:new( data )
 		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
 	end
 	table.insert( Game.Objects, self )
-	
 	return self
 end
 

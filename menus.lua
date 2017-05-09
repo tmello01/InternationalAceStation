@@ -150,6 +150,25 @@ local function makeGameTypePanel()
 				Game.ServerInfo.Port = port
 				Game.ConnectMode = "Client"
 				ui.state = "Main"
+				for i, v in pairs( data.c ) do
+					if v.t == "c" then
+						card:new({
+							networkID = v.n,
+							x = v.x,
+							y = v.y,
+							flipped = v.f,
+							value = v.v,
+							suit = v.s,
+						})
+					elseif v.t == "d" then
+						deck:new({
+							networkID = v.n,
+							x = v.x,
+							y = v.y,
+							cards = v.c,
+						})
+					end
+				end
 			else
 				print("could not connect", 1)
 			end

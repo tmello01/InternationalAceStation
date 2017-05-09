@@ -87,7 +87,29 @@ function love.update( dt )
 		if data then
 			data = Game.UnpackMessage(data)
 			if data.h == "Connect" then
-				Game.InternalServer.Server:sendto(Game.PackMessage("ConnectAttemptSuccess",{}),ip,port)
+				local tableContents = {}
+				for i, v in pairs( Game.Objects ) do
+					if v.type == "card" then
+						table.insert( tableContents, {
+							x = v.x,
+							y = v.y,
+							v = v.value,
+							s = v.suit,
+							f = v.flipped,
+							n = v.networkID,
+							t = "c",
+						})
+					elseif v.type == "deck" then
+						table.insert( tableContents, {
+							x = v.x,
+							y = v.y,
+							n = v.networkID,
+							c = v.cards,
+							t = "d",
+						})
+					end
+				end
+				Game.InternalServer.Server:sendto(Game.PackMessage("ConnectAttemptSuccess",tableContents),ip,port)
 				table.insert(Game.InternalServer.Clients, {ip = ip, port = port})
 			elseif data.h == "MOVE" then
 				local nid = data.c.n;
@@ -95,6 +117,7 @@ function love.update( dt )
 					if v.networkID == nid then
 						v.x = data.c.x
 						v.y = data.c.y
+						v:topDrawOrder()
 						return
 					end
 				end
@@ -106,6 +129,22 @@ function love.update( dt )
 						return
 					end
 				end
+			elseif data.h == "FLIP" then
+				local nid = data.c.n;
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == nid then
+						v.flipped = data.c.f
+						return
+					end
+				end
+			elseif data.h == "DRAWCARD" then
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == data.c.n then
+						v:onSingleTap()
+					end
+				end
+			elseif data.h == "STACK" then
+				Game.InitializeDeck(data.c.x, data.c.y, data.c.c)
 			end
 		end
 	elseif Game.ConnectMode == "Client" then
@@ -123,13 +162,46 @@ function love.update( dt )
 					value = data.c.v,
 					flipped = data.c.f,
 					networkID = data.c.n,
+					tweentox = data.c.t or nil,
 				})
+			elseif data.h == "NewDeck" then
+				deck:new({
+					x = data.c.x,
+					y = data.c.y,
+					networkID = data.c.n,
+					cards = data.c.c,
+				})
+			elseif data.h == "SHUFFLE" then
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == data.c.n then
+						v.gotostart = tween.new(0.3, self, {x = self.startdx, y = self.startdy}, "inOutExpo")
+						v.tweenback = true
+						return
+					end
+				end
+			elseif data.h == "UPDATEDECK" then
+				local nid = data.c.n;
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == nid then
+						v.cards = data.c.c
+						return
+					end
+				end
+			elseif data.h == "FLIP" then
+				local nid = data.c.n;
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == nid then
+						v.flipped = data.c.f
+						return
+					end
+				end
 			elseif data.h == "MOVE" then
 				local nid = data.c.n;
 				for i, v in pairs( Game.Objects ) do
 					if v.networkID == nid then
 						v.x = data.c.x
 						v.y = data.c.y
+						v:topDrawOrder()
 						return
 					end
 				end

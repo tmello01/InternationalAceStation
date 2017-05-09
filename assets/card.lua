@@ -156,8 +156,9 @@ local card = {
 				flipped = self.flipped,
 				networkID = self.networkID
 			})
-			if (Game.ConnectMode == "Offline" or Game.ConnectMode == "Host") then
-				deck:new({x = self.x, y = self.y, cards=cards, networkID = Game.GenerateNetworkID()})
+			if Game.IsAdmin() then
+				Game.InitializeDeck( self.x, self.y, cards )
+
 				local sound = love.math.random(1,4)
 				Game.Sounds.CardPlace[sound]:stop()
 				Game.Sounds.CardPlace[sound]:play()
@@ -166,10 +167,20 @@ local card = {
 				end
 				self:remove()
 			else
-				--Request server handles a deck stack between all the cards in the new deck
-				Game.SendToHost(table.serialize({
-					
-				}))
+				local n = {}
+				for i, v in pairs( cards ) do
+					table.insert( n, v.networkID )
+					for k, z in pairs( Game.Objects ) do
+						if z.networkID == v.networkID then
+							z:remove()
+						end
+					end
+				end
+				Game.SendToHost("STACK", {
+					c = cards,
+					x = self.x,
+					y = self.y,
+				})
 			end
 			return
 		end
@@ -182,6 +193,12 @@ local card = {
 	]]--
 	onSingleTap = function( self )
 		self.flipped = not self.flipped
+		if Game.IsAdmin() then
+			Game.SendToClients( "FLIP", {
+				n = self.networkID,
+				f = self.flipped,
+			})
+		end
 		return
 	end,
 
@@ -205,6 +222,11 @@ local card = {
 		for i, v in pairs( Game.Objects ) do
 			if v == self then
 				table.remove( Game.Objects, i )
+				if Game.IsAdmin() then
+					Game.SendToClients("REMOVE", {n = self.networkID})
+				else
+					Game.SendToHost("REMOVE", {n = self.networkID})
+				end
 				if not noskip then
 					break
 				end
@@ -233,11 +255,9 @@ local card = {
 		self.y = y-self.dragy
 		
 		if Game.IsAdmin() then
-			for i, v in pairs( Game.InternalServer.Clients ) do
-				Game.InternalServer.Server:sendto( Game.PackMessage("MOVE", {n = self.networkID, x = self.x, y = self.y}), v.ip, v.port)
-			end
+			Game.SendToClients("MOVE", {n = self.networkID, x = self.x, y = self.y})
 		else
-			Game.InternalClient.Client:sendto( Game.PackMessage("MOVE", {n = self.networkID, x = self.x, y = self.y}), Game.ServerInfo.IP, Game.ServerInfo.Port )
+			Game.SendToHost("MOVE", {n = self.networkID, x = self.x, y = self.y})
 		end
 
 		if self.x < love.graphics.getWidth()/4 then
@@ -379,13 +399,7 @@ local card = {
 						end--]]
 					end
 					self:remove()
-					if Game.IsAdmin() then
-						for i, v in pairs( Game.InternalServer.Clients ) do
-							Game.InternalServer.Server:sendto( Game.PackMessage("REMOVE", {n = self.networkID}), v.ip, v.port)
-						end
-					else
-						Game.InternalClient.Client:sendto( Game.PackMessage("REMOVE", {n = self.networkID}), Game.ServerInfo.IP, Game.ServerInfo.Port)
-					end
+					
 					SHOWCHARMS = false
 				end
 			end

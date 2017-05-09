@@ -27,21 +27,19 @@ Game = {
 	IsAdmin = function()
 		return Game.ConnectMode == "Offline" or Game.ConnectMode == "Host"
 	end,
-	InitializeCard = function(suit, value, x, y, flipped)
+	InitializeCard = function(suit, value, x, y, flipped, tweentox)
 		if Game.IsAdmin() then
 			local nid = Game.GenerateNetworkID()
-			card:new({suit = suit, value = value, x = x, y = y, flipped = flipped, networkID = nid})
-			local msg = Game.PackMessage("NewCard", {
+			card:new({suit = suit, value = value, x = x, y = y, flipped = flipped, networkID = nid, tweentox = tweentox}):topDrawOrder()
+			Game.SendToClients( "NewCard", {
 				s = suit,
 				v = value,
 				x = x,
 				y = y,
 				f = flipped,
-				n = nid
+				n = nid,
+				t = tweentox or nil
 			})
-			for i, v in pairs( Game.InternalServer.Clients ) do
-				Game.InternalServer.Server:sendto( msg, v.ip, v.port )
-			end
 		end
 	end,
 	InitializeDeck = function(x, y, cards)
@@ -49,15 +47,12 @@ Game = {
 			local nid = Game.GenerateNetworkID()
 			local cards = cards or {}
 			deck:new({x=x,y=y,cards=cards,networkID = nid})
-			local msg = Game.PackMessage("NewDeck", {
+			Game.SendToClients("NewDeck", {
 				x = x,
 				y = y,
 				n = nid,
 				c = cards,
 			})
-			for i, v in pairs( Game.InternalServer.Clients ) do
-				Game.InternalServer.Server:sendto( msg, v.ip, v.port )
-			end
 		end
 	end,
 	GenerateNetworkID = function()
@@ -90,8 +85,13 @@ Game = {
 	InternalClient = {
 		Client = socket.udp()
 	},
-	SendToHost = function( datagram )
-		return Game.InternalClient.Client:sendto(Game.ServerInfo.IP, datagram)
+	SendToHost = function( head, contents )
+		return Game.InternalClient.Client:sendto( Game.PackMessage( head, contents ), Game.ServerInfo.IP, Game.ServerInfo.Port )
+	end,
+	SendToClients = function( head, contents )
+		for i, v in pairs( Game.InternalServer.Clients ) do
+			Game.InternalServer.Server:sendto( Game.PackMessage( head, contents ), v.ip, v.port )
+		end
 	end,
 	PackMessage = function( head, content )
 		return table.serialize({h=head,c=content})

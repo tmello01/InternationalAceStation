@@ -160,7 +160,7 @@ local deck = {
 		if self.x < love.graphics.getWidth()/4 then
 			if not SHOWCHARMS then
 				SHOWCHARMS = true
-				SHOWDECKCHARMS = true
+				SHOWDECKCHARMS = not self.selected
 				Tweens.Final.HideCharmsPanel.t:reset()
 				Tweens.Final.ShowCharmsPanel.active = true
 				Tweens.Final.HideCharmsPanel.active = false
@@ -171,13 +171,11 @@ local deck = {
 			Tweens.Final.HideCharmsPanel.active = true
 		end
 		if self.selected then
-			for i, v in pairs( Game.Objects ) do
-				if v ~= self and v.selected then
-					if not v.dragged then
-						v.dragged = true
-					else
-						v.x = x-v.dragx
-						v.y = y-v.dragy
+			for i, v in pairs( Game.Selection ) do
+				for k, z in pairs( Game.Objects ) do
+					if z.networkID == v then
+						z.x = x - z.dragx
+						z.y = y - z.dragy
 					end
 				end
 			end
@@ -253,8 +251,17 @@ local deck = {
 				Tweens.Final.ShowCharmsPanel.active = false
 				Tweens.Final.HideCharmsPanel.active = true
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
+					if self.selected then
+						for i, v in pairs( Game.Selection ) do
+							for k, z in pairs( Game.Objects ) do
+								if z.networkID == v then
+									z:remove()
+								end
+							end
+						end
+					end
 					self:remove()
-				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()/2-25 and self.y <= love.graphics.getHeight()/2-25 + w then
+				elseif (not self.selected) and self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()/2-25 and self.y <= love.graphics.getHeight()/2-25 + w then
 					shuffleTable(self.cards)
 					if Game.IsAdmin() then
 						
@@ -265,7 +272,7 @@ local deck = {
 					else
 						Game.SendToHost("SHUFFLE", {n = self.networkID, x = self.startdx, y = self.startdy})
 					end
-				elseif self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()-115 and self.y <= love.graphics.getHeight() -15 then
+				elseif (not self.selected) and self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()-115 and self.y <= love.graphics.getHeight() -15 then
 					Game.Sounds.CardSlide[love.math.random(5,8)]:play()
 					if #self.cards == 2 then
 						local c1 = self.cards[1]
@@ -307,12 +314,8 @@ local deck = {
 					return
 				end
 
-				for i, v in pairs( Game.Objects ) do
-					v.dragged = false
-					v.selected = false
-					v.touched = false
-					v.held = false
-				end
+				self.dragged = false
+				
 			end
 			Game.Sounds.CardSlide[love.math.random(1,4)]:play()
 			self.dragged = false
@@ -320,6 +323,19 @@ local deck = {
 			self.touched = false
 			self.selected = false
 		end
+		self.dragged = false
+		self.held = false
+		self.touched = false
+		for i, v in pairs( Game.Objects ) do
+			v.dragged = false
+			v.selected = false
+			v.touched = false
+			v.held = false
+		end
+		love.graphics.setCanvas( Game.SelectionCanvas )
+		love.graphics.clear()
+		love.graphics.setCanvas()
+		Game.Selection = {}
 	end,
 	cancelTouchManager = function( self, id )
 		if self.touched then

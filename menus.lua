@@ -148,8 +148,15 @@ local function makeGameTypePanel()
 				Game.ServerInfo.IP = IPAddrInput.text
 				Game.ServerInfo.Port = port
 				Game.ConnectMode = "Client"
+				
+				local str = "IP: " .. Game.GetNetworkAddress()
+				if Game.ConnectMode == "Offline" then
+					str = "Offline"
+				end
+				IPADDRESSLABEL.text = str
+
 				ui.state = "Main"
-				for i, v in pairs( data.c ) do
+				for i, v in ipairs( data.c ) do
 					if v.t == "c" then
 						card:new({
 							networkID = v.n,
@@ -293,6 +300,11 @@ local function makeGameTypePanel()
 			Game.LoadTemplate("Solitaire", true)
 		end
 		ui.state = "Main"
+		local str = "IP: " .. Game.GetNetworkAddress()
+		if Game.ConnectMode == "Offline" then
+			str = "Offline"
+		end
+		IPADDRESSLABEL.text = str
 	end
 
 	GameSelection:add("button", {
@@ -319,17 +331,17 @@ function MakeGameAdminPanel()
 		local HiddenSize = love.graphics.getWidth()*0.075
 		local PanelW = love.graphics.getWidth()/4
 
-		AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, _substate="Hidden"})
+		AdminPanel = ui.new({w=PanelW, background = {210, 210, 210}, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, _substate="Hidden"})
 		local addr = AdminPanel:add("panel", {
 			w = PanelW - 55,
 			h = 100,
 			background = hex2rgb("#673AB7"),
 		})
-		addr:add("text", {
-			text = "IP: " .. Game.GetNetworkAddress(),
-			font = ui.font(40, "Roboto-Light"),
+		IPADDRESSLABEL = addr:add("text", {
+			text = str,
+			font = ui.font(25, "Roboto-Light"),
 			foreground = { 255, 255, 255 },
-			y = math.ceil(addr.h/2 - ui.font(40, "Roboto-Light"):getHeight()/2),
+			y = math.ceil(addr.h/2 - ui.font(25, "Roboto-Light"):getHeight()/2),
 			align = "center",
 			substate = "Main",
 		})
@@ -351,7 +363,15 @@ function MakeGameAdminPanel()
 			font = ui.font(36, "FontAwesome"),
 			text = fontAwesome['fa-plus'],
 		}).onclick = function()
-			Game.InitializeCard()
+			--Game.InitializeCard()
+			SHOWADMINPANEL.clickable = false
+			CANMAKETOUCH = false
+			AddPanel:setSubstate("Main")
+			AddPanel.visible = true
+			if AdminPanel._substate ~= "Hidden" then
+				AdminPanel:setSubstate( "Hidden" )
+				Tweens.Final.HideAdminPanel.active = true
+			end
 		end
 		AdminPanel:add("button", {
 			w = AdminPanel.w/2,
@@ -384,7 +404,7 @@ function MakeGameAdminPanel()
 			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
 			Tweens.Final.HideAdminPanel.active = true
 		end
-		AdminPanel:add("button", {
+		SHOWADMINPANEL = AdminPanel:add("button", {
 			w = HiddenSize,
 			h = AdminPanel.h,
 			background = {210, 210, 210},
@@ -392,7 +412,8 @@ function MakeGameAdminPanel()
 			text = fontAwesome['fa-angle-double-left'],
 			font = ui.font(30, "FontAwesome"),
 			substate = "Hidden",
-		}).onclick = function()
+		})
+		SHOWADMINPANEL.onclick = function()
 			AdminPanel:setSubstate( "Main" )
 			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()/4
 			Tweens.Final.ShowAdminPanel.active = true
@@ -783,8 +804,225 @@ local function makeTemplateBasePanel()
 	end
 end
 
+function makeAddPanel()
+
+	AddPanel = ui.new( {
+		w = love.graphics.getWidth()/2,
+		h = love.graphics.getHeight()/2,
+		background = { 255, 255, 255 },
+		substate = "Hidden",
+		state = "Main",
+		drawAboveObjects = true,
+		visible = false,
+		x = love.graphics.getWidth()/4,
+		y = love.graphics.getHeight()/4,
+	})
+	AddPanel:add("text", {
+		font = ui.font(35, "Roboto-Bold"),
+		text = "ADD OBJECT", 
+		align = "center",
+		foreground = { 42, 42, 42 },
+		y = 5,
+	})
+	local NewCard = AddPanel:add("button", {
+		w = AddPanel.w / 2 - 40,
+		h = AddPanel.h / 2,
+		x = 20,
+		y = AddPanel.h / 6,
+		font = ui.font(40, "Roboto-Light"),
+		text = "New Card",
+	})
+	NewCard.onclick = function()
+	end
+	local NewDeck = AddPanel:add("button", {
+		w = AddPanel.w / 2 - 40,
+		h = AddPanel.h / 2,
+		x = AddPanel.w - (AddPanel.w/2),
+		y = AddPanel.h / 6,
+		font = ui.font(40, "Roboto-Light"),
+		background = hex2rgb("#3949ab"),
+		text = "New Deck",
+	})
+	NewDeck.onclick = function()
+		AddPanel:setSubstate("Deck")
+	end
+
+	AddPanel:add("text", {
+		font = ui.font(35, "Roboto-Bold"),
+		text = "ADD DECK", 
+		align = "center",
+		foreground = { 42, 42, 42 },
+		y = 5,
+		substate = "Deck"
+	})
+
+	
+	local FlipCards = AddPanel:add("radio", {
+		label = "Flip Cards",
+		size = 30,
+		x = 35,
+		y = math.ceil(AddPanel.h-65),
+		substate = "Deck",
+		font = ui.font(24, "Roboto-Light")
+	})
+
+
+	local stDeck = AddPanel:add("button", {
+		text = "Standard Deck",
+		background = hex2rgb("#00bcd4"),
+		w = AddPanel.w - 20,
+		h = 80,
+		y = 50,
+		x = 10,
+		font = ui.font(20, "Roboto-Bold"),
+		substate = "Deck",
+	})
+	stDeck.onclick = function()
+		local c = {}
+		local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
+		local suits = { "diamonds", "clubs", "hearts", "spades" }
+		for i, v in pairs( suits ) do
+			for k, z in pairs( values ) do
+				table.insert( c, {
+					value = z,
+					suit = v,
+					flipped = FlipCards.active
+				})
+			end
+		end
+		Game.InitializeDeck( love.math.random(0, 200), love.math.random(0, 200), c )
+	end
+	local spadeDeck = AddPanel:add("button", {
+		text = "Spades Only",
+		background = hex2rgb("#424242"),
+		w = AddPanel.w / 2 - 15,
+		h = 50,
+		y = 140,
+		x = 10,
+		substate = "Deck"
+	})
+	spadeDeck.onclick = function()
+		local c = {}
+		local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
+		local suits = { "spades" }
+		for i, v in pairs( suits ) do
+			for k, z in pairs( values ) do
+				table.insert( c, {
+					value = z,
+					suit = v,
+					flipped = FlipCards.active
+				})
+			end
+		end
+		Game.InitializeDeck( love.math.random(0, 200), love.math.random(0, 200), c )
+	end
+	local clubDeck = AddPanel:add("button", {
+		text = "Clubs Only",
+		background = hex2rgb("#424242"),
+		w = AddPanel.w / 2 - 15,
+		h = 50,
+		y = 200,
+		x = 10,
+		substate = "Deck"
+	})
+	clubDeck.onclick = function()
+		local c = {}
+		local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
+		local suits = { "clubs" }
+		for i, v in pairs( suits ) do
+			for k, z in pairs( values ) do
+				table.insert( c, {
+					value = z,
+					suit = v,
+					flipped = FlipCards.active
+				})
+			end
+		end
+		Game.InitializeDeck( love.math.random(0, 200), love.math.random(0, 200), c )
+	end
+	local diamondDeck = AddPanel:add("button", {
+		text = "Diamonds Only",
+		background = hex2rgb("#e91e63"),
+		w = AddPanel.w / 2 - 15,
+		h = 50,
+		y = 140,
+		x = AddPanel.w - (AddPanel.w / 2 - 15)-10,
+		substate = "Deck"
+	})
+	diamondDeck.onclick = function()
+		local c = {}
+		local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
+		local suits = { "diamonds" }
+		for i, v in pairs( suits ) do
+			for k, z in pairs( values ) do
+				table.insert( c, {
+					value = z,
+					suit = v,
+					flipped = FlipCards.active
+				})
+			end
+		end
+		Game.InitializeDeck( love.math.random(0, 200), love.math.random(0, 200), c )
+	end
+	local heartDeck = AddPanel:add("button", {
+		text = "Hearts Only",
+		background = hex2rgb("#e91e63"),
+		w = AddPanel.w / 2 - 15,
+		h = 50,
+		y = 200,
+		x = AddPanel.w - (AddPanel.w / 2 - 15)-10,
+		substate = "Deck"
+	})
+	heartDeck.onclick = function()
+		local c = {}
+		local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
+		local suits = { "hearts" }
+		for i, v in pairs( suits ) do
+			for k, z in pairs( values ) do
+				table.insert( c, {
+					value = z,
+					suit = v,
+					flipped = FlipCards.active
+				})
+			end
+		end
+		Game.InitializeDeck( love.math.random(0, 200), love.math.random(0, 200), c )
+	end
+
+
+	AddPanel:add("button", {
+		text = "CANCEL", 
+		background = hex2rgb("#f44336"),
+		w = AddPanel.w / 2,
+		h = 75,
+		y = AddPanel.h - 80,
+		font = ui.font(20, "Roboto-Bold"),
+		x = AddPanel.w - (AddPanel.w / 2) - 10,
+		substate = "Deck",
+	}).onclick = function()
+		AddPanel:setSubstate("Main")
+	end
+
+	AddPanel:add("button", {
+		text = "CANCEL", 
+		background = hex2rgb("#f44336"),
+		w = AddPanel.w / 2,
+		h = 100,
+		y = AddPanel.h - 110,
+		font = ui.font(20, "Roboto-Bold"),
+		x = AddPanel.w / 4,
+		substate = "Main",
+	}).onclick = function()
+		AddPanel:setSubstate("Hidden")
+		AddPanel.visible = false
+		SHOWADMINPANEL.clickable = true
+		CANMAKETOUCH = true
+	end
+
+end
 
 function makeMenus()
+	makeAddPanel()
 	makeMainMenu()
 	makeGameTypePanel()
 	MakeGameAdminPanel()

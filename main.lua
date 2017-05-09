@@ -28,6 +28,8 @@ require "copy"
 socket = socket or require "socket"
 local http = require("socket.http")
 
+CANMAKETOUCH = true
+
 require "ser"
 tween = require "tween"
 require "camera"
@@ -72,9 +74,9 @@ function love.update( dt )
 			end
 		end
 	end
-	if AdminPanel.substate == "Hidden" and Tweens.Final.HideAdminPanel.active then
+	if AdminPanel._substate == "Hidden" and Tweens.Final.HideAdminPanel.active then
 		AdminPanel.x = Tweens.Data.HideAdminPanel.x
-	elseif AdminPanel.substate == "Main" and Tweens.Final.ShowAdminPanel.active then
+	elseif AdminPanel._substate == "Main" and Tweens.Final.ShowAdminPanel.active then
 		AdminPanel.x = Tweens.Data.ShowAdminPanel.x
 	end
 
@@ -178,6 +180,28 @@ function love.update( dt )
 					tweentox = data.c.t,
 					tweentoy = data.c.ty,
 				}):topDrawOrder()
+				
+			elseif data.h == "STARTSELECT" then
+				local allowDrag = (data.c.o == Game.UniqueNetworkID)
+				for i, v in pairs( data.c.c ) do
+					for k, z in pairs( Game.Objects ) do
+						if z.networkId == v then
+							z.selected = true
+							z.owner = data.c.o
+						end
+					end
+				end
+
+			elseif data.h == "MOVESELECT" then
+
+			elseif data.h == "ENDSELECT" then
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == data.c.n and v.owner == data.c.o then
+						v.selected = false
+					end
+				end
+			end
+
 			elseif data.h == "SHUFFLE" then
 				for i, v in pairs( Game.Objects ) do
 					if v.networkID == data.c.n then
@@ -254,7 +278,11 @@ function love.draw()
 		Game.SelectionCanvas:renderTo(function()
 			love.graphics.clear()
 			for i, v in pairs( Game.Selection ) do
-				v:draw()
+				for k, z in pairs( Game.Objects ) do
+					if z.networkID == v then
+						z:draw()
+					end
+				end
 			end
 		end)
 		love.graphics.draw( Game.SelectionCanvas )

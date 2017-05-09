@@ -36,12 +36,12 @@ Game = {
 		]]--
 		return sock:getsockname()
 	end,
-	InitializeCard = function(suit, value, x, y, flipped, tweentox, tweentoy)
+	InitializeCard = function(suit, value, x, y, flipped, tweentox, tweentoy, deckgroup)
 		if Game.IsAdmin() then
 			local nid = Game.GenerateNetworkID()
 			
 			local tweento = (tweentox ~= nil or tweentoy ~= nil)
-			card:new({suit = suit, value = value, x = x, y = y, flipped = flipped, networkID = nid, tweentox = tweentox, tweentoy = tweentoy, tweento = tweento}):topDrawOrder()
+			card:new({suit = suit, value = value, x = x, y = y, deckgroup = deckgroup, flipped = flipped, networkID = nid, tweentox = tweentox, tweentoy = tweentoy, tweento = tweento}):topDrawOrder()
 			Game.SendToClients( "NewCard", {
 				s = suit,
 				v = value,
@@ -64,12 +64,12 @@ Game = {
 			})
 		end
 	end,
-	InitializeDeck = function(x, y, cards, tweentox, tweentoy)
+	InitializeDeck = function(x, y, cards, tweentox, tweentoy, deckgroup)
 		if Game.IsAdmin() then
 			local nid = Game.GenerateNetworkID()
 			local cards = cards or {}
 			local tweento = (tweentox ~= nil or tweentoy ~= nil)
-			deck:new({x=x,y=y,cards=cards,networkID = nid, tweentox = tweentox, tweentoy = tweentoy, tweento = tweento}):topDrawOrder()
+			deck:new({x=x,y=y,cards=cards,networkID = nid, deckgroup = deckgroup, tweentox = tweentox, tweentoy = tweentoy, tweento = tweento}):topDrawOrder()
 			Game.SendToClients("NewDeck", {
 				x = x,
 				y = y,
@@ -244,23 +244,16 @@ Game = {
 				--Loading template to be edited in the template builder--
 				local cardsToPlace = {}
 				for i, v in ipairs( templateData.cards ) do
-					local newcard = cardTemplate:new({
-						x = v.x,
-						y = v.y,
-						flipped = v.flipped,
-						suit = v.suit,
-						value = v.value,
-						deckgroup = v.deckgroup,
-					})
-					newcard:topDrawOrder()
+					Game.InitializeCard(v.suit, v.value, v.x, v.y, v.flipped, nil, nil, v.deckgroup)
 				end
 				for i, v in ipairs( templateData.decks ) do
-					deckTemplate:new({
+					--[[deckTemplate:new({
 						x = v.x,
 						y = v.y,
 						cards = v.cards,
 						deckgroup = v.deckgroup
-					})
+					})-]]
+					Game.InitializeDeck(v.x, v.y, v.cards, nil, nil, v.deckgroup)
 				end
 			else
 				--Loading templated to be played with--
@@ -314,14 +307,7 @@ Game = {
 									end
 								end
 							end
-							card:new({
-								x = obj.x,
-								y = obj.y,
-								suit = suit,
-								value = value,
-								flipped = flipped
-							})
-							card:topDrawOrder()
+							Game.InitializeCard(suit, value, obj.x, obj.y, flipped)
 							table.remove(cardsToPlace, CardToRemove)
 						end
 					end
@@ -364,11 +350,7 @@ Game = {
 								})
 								table.remove(cardsToPlace, CardToRemove)
 							end
-							deck:new({
-								x = obj.x,
-								y = obj.y,
-								cards = cards
-							})
+							Game.InitializeDeck( obj.x, obj.y, cards )
 						end
 					end
 				end
@@ -381,6 +363,9 @@ Game = {
 
 	getState = function() return Game.Globals.Gamestate end,
 }
+
+local a, b = Game.GetNetworkAddress()
+Game.UniqueNetworkID = a..":"..b
 
 Cards = {}
 for i, v in pairs( love.filesystem.getDirectoryItems( "assets/images/cards/" ) ) do

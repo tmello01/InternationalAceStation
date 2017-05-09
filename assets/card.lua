@@ -279,13 +279,21 @@ local card = {
 			Tweens.Final.HideCharmsPanel.active = true
 		end
 		if self.selected then
-			for i, v in pairs( Game.Objects ) do
+			--[[for i, v in pairs( Game.Objects ) do
 				if v ~= self and v.selected then
 					if not v.dragged then
 						v.dragged = true
 					else
 						v.x = x-v.dragx
 						v.y = y-v.dragy
+					end
+				end
+			end--]]
+			for i, v in pairs( Game.Selection ) do
+				for k, z in pairs( Game.Objects ) do
+					if z.networkID == v then
+						z.x = x - z.dragx
+						z.y = y - z.dragy
 					end
 				end
 			end
@@ -373,6 +381,7 @@ local card = {
 		end
 	end,
 	endTouch = function( self, id )
+
 		if self.touched then
 			local sound = love.math.random(1,4)
 			Game.Sounds.CardSlide[sound]:stop()
@@ -389,18 +398,13 @@ local card = {
 				
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					if self.selected then
-						--[[for i = 1, #Game.Objects do
-							if Game.Objects[i].type ~= "deckgroup" and Game.Objects[i] ~= self then
-								if Game.Objects[i].selected then
-									table.remove(Game.Objects, i)
+						for i, v in pairs( Game.Selection ) do
+							for k, z in pairs( Game.Objects ) do
+								if z.networkID == v then
+									z:remove()
 								end
 							end
 						end
-						for i, v in pairs( Game.Objects ) do
-							if v.type ~= "deckgroup" and v ~= self and v.selected then
-								table.remove(Game.Objects, i)
-							end
-						end--]]
 					end
 					self:remove()
 					
@@ -416,6 +420,10 @@ local card = {
 				v.touched = false
 				v.held = false
 			end
+			love.graphics.setCanvas( Game.SelectionCanvas )
+			love.graphics.clear()
+			love.graphics.setCanvas()
+			Game.Selection = {}
 		end
 	end,
 	cancelTouchManager = function( self, id )

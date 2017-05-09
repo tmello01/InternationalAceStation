@@ -90,7 +90,7 @@ function radio:draw()
 					love.graphics.setColor( self.foregroundinactive )
 				end
 				love.graphics.setFont( self.font )
-				love.graphics.print( self.label, math.floor(x + self.size + self.size/2), math.floor(ui.getAbsY(self)) )
+				love.graphics.print( self.label, math.floor(x + self.size + self.size/2), math.ceil(ui.getAbsY(self)) )
 			end
 		end
 	end

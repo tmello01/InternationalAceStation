@@ -51,23 +51,25 @@ local function isOnObject(id,x,y,skipUpdate)
 end
 
 function t:new( id, x, y )
-	local data = {id=id,x=x,y=y}
-	local self = setmetatable(data,t)
-	self.pastDeadzone = false
-	table.insert( touches, self )
-	if not isOnObject(id,x,y,(#Game.Selection > 0)) and ui.state == "Main" then
-		self.startx = x
-		self.starty = y
-		self.selecting = true
-		for i, v in pairs( Game.Objects ) do
-			if v.selected then v.selected = false end
+	if CANMAKETOUCH then
+		local data = {id=id,x=x,y=y}
+		local self = setmetatable(data,t)
+		self.pastDeadzone = false
+		table.insert( touches, self )
+		if not isOnObject(id,x,y,(#Game.Selection > 0)) and ui.state == "Main" then
+			self.startx = x
+			self.starty = y
+			self.selecting = true
+			for i, v in pairs( Game.Objects ) do
+				if v.selected then v.selected = false end
+			end
+			Game.Selection = {}
+			love.graphics.setCanvas( Game.SelectionCanvas )
+			love.graphics.clear()
+			love.graphics.setCanvas()
 		end
-		Game.Selection = {}
-		love.graphics.setCanvas( Game.SelectionCanvas )
-		love.graphics.clear()
-		love.graphics.setCanvas()
+		return self	
 	end
-	return self
 end
 
 function t:update( dt )
@@ -80,6 +82,10 @@ function t:updatePosition( x, y )
 		if not self.pastDeadzone then
 			self.pastDeadzone = math.abs(x-self.x) > deadzone or math.abs(y-self.y) > deadzone
 			if self.pastDeadzone then
+				if AdminPanel._substate ~= "Hidden" then
+					AdminPanel:setSubstate( "Hidden" )
+					Tweens.Final.HideAdminPanel.active = true
+				end
 				for i, v in pairs( Game.InternalServer.Clients ) do
 					Game.InternalServer.Server:sendto( Game.PackMessage("MOVE", {n = self.networkID, x = self.x, y = self.y}), v.ip, v.port)
 				end
@@ -115,39 +121,35 @@ function t:endTouch(x, y)
 	local x2 = math.max(self.x, self.startx)
 	local y1 = math.min(self.y, self.starty)
 	local y2 = math.max(self.y, self.starty)
-
-	print( self.canselect )
-	--[[if not self.selecting and #Game.Selection > 0 then
-		if x >= 0 and x <= 75 and y >= 0 and y <= 75 then
-			--delete selection
-			for i, obj in pairs( Game.Selection ) do
-				for k, v in pairs( Game.Objects ) do
-					print( obj, v )
-					if obj == v then
-						table.remove(Game.Objects, k)
-						obj = nil
-					end
-				end
-			end
-		end
-		
-	
-		Game.SelectionCanvas:renderTo(function()
-			love.graphics.clear()
-		end)
-		return
-	end--]]
 	if self.selecting and self.canselect then
 		for i, obj in pairs( Game.Objects ) do
 			if obj.type ~= "deckgroup" then
 				if obj.x >= x1 and obj.y >= y1 and obj.x + obj.w <= x2 and obj.y + obj.h <= y2 then
 					obj.selected = true
-					table.insert( Game.Selection, obj )
+					table.insert( Game.Selection, obj.networkID )
 				end
 			end
 		end
+		for i, v in pairs( Game.Selection ) do
+			for k, z in pairs( Game.Objects ) do
+				if z.networkID == v then
+					z.selected = true
+				end
+			end
+		end
+		if Game.IsAdmin() then
+			Game.SendToClients("STARTSELECT", {
+				o = Game.UniqueNetworkID,
+				c = Game.Selection,
+			})
+		else
+			Game.SendToHost("STARTSELECT", {
+				o = Game.UniqueNetworkID
+				c = Game.Selection
+			})
+		end
 	else
-		Game.Selected = {}
+		Game.Selection = {}
 		for i, v in pairs( Game.Objects ) do
 			v.selected = false
 		end

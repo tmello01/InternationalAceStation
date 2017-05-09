@@ -18,7 +18,7 @@ end
 function ui.checkState(obj,dbug)
 	if obj.state and obj.state == ui.state and obj.visible then
 		if obj.parent then
-			if obj.parent.substate == obj.substate and obj.parent.visible then
+			if obj.parent._substate == obj.substate and ui.checkState(obj.parent) then
 				return true
 			else
 				return false

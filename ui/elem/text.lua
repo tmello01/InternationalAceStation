@@ -22,6 +22,7 @@ function text:new(data, parent)
 	local self = copy3(text)
 	self = setmetatable(data,self)
 	self.parent = parent or error("Text object needs a parent!")
+	self.background = data.background or parent.background
 	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(16) end
 	self.lines = {""}
@@ -85,11 +86,11 @@ function text:draw()
 			love.graphics.setColor(self.foreground or self.parent.foreground)
 			love.graphics.setFont( self.font or ui.font(16))
 			for i, v in pairs( self.lines ) do
-				love.graphics.printf( self.lines[i], ui.getAbsX(self), ui.getAbsY(self)+((i-1)*self.font:getHeight()), self.parent.w, "center")
+				love.graphics.printf( self.lines[i], ui.getAbsX(self), ui.getAbsY(self)+((i-1)*self.font:getHeight()), self.parent.w-self.x, "center")
 			end
 		else
-			love.graphics.setColor(self.background)
-			love.graphics.rectangle("fill",ui.getAbsX(self),ui.getAbsY(self),self.font:getWidth(self.text),self.font:getHeight())
+			--love.graphics.setColor(self.background)
+			--love.graphics.rectangle("fill",ui.getAbsX(self),ui.getAbsY(self),self.font:getWidth(self.text),self.font:getHeight())
 			love.graphics.setColor(self.foreground or self.parent.foreground)
 			love.graphics.setFont(self.font or ui.font(16))
 			for i, v in pairs( self.lines ) do

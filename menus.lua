@@ -99,7 +99,7 @@ local function makeGameTypePanel()
 		font = ui.font(30,"Roboto-Bold"),
 		align = "center",
 	}).onclick = function()
-		GameSelection.substate = "HostGame"
+		GameSelection:setSubstate( "HostGame" )
 		Game.Mode = "HOST"
 	end
 	GameSelection:add("button", {
@@ -112,7 +112,7 @@ local function makeGameTypePanel()
 		font = ui.font(30,"Roboto-Bold"),
 		align = "center",
 	}).onclick = function()
-		GameSelection.substate = "JoinGame"
+		GameSelection:setSubstate( "JoinGame" )
 		Game.Mode = "JOIN"
 	end
 	IPAddrInput = GameSelection:add("textinput", {
@@ -184,7 +184,7 @@ local function makeGameTypePanel()
 		align = "center",
 		substate = "JoinGame"
 	}).onclick = function()
-		GameSelection.substate = "Main"
+		GameSelection:setSubstate( "Main" )
 	end
 	GameSelection:add("button", {
 		y = middle + 115,
@@ -307,7 +307,7 @@ local function makeGameTypePanel()
 		h = 75,
 		y = 535
 	}).onclick = function()
-		GameSelection.substate = "Main"
+		GameSelection:setSubstate( "Main" )
 	end
 end
 
@@ -319,7 +319,7 @@ function MakeGameAdminPanel()
 		local HiddenSize = love.graphics.getWidth()*0.075
 		local PanelW = love.graphics.getWidth()/4
 
-		AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, substate="Hidden"})
+		AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, _substate="Hidden"})
 		local addr = AdminPanel:add("panel", {
 			w = PanelW - 55,
 			h = 100,
@@ -331,6 +331,7 @@ function MakeGameAdminPanel()
 			foreground = { 255, 255, 255 },
 			y = math.ceil(addr.h/2 - ui.font(40, "Roboto-Light"):getHeight()/2),
 			align = "center",
+			substate = "Main",
 		})
 		AdminPanel:add("button", {
 			w = AdminPanel.w,
@@ -340,7 +341,7 @@ function MakeGameAdminPanel()
 			h = 75,
 			y = AdminPanel.h - 75,
 		}).onclick = function()
-			AdminPanel.substate = "Quit"
+			AdminPanel:setSubstate( "Quit" )
 		end
 		AdminPanel:add("button", {
 			w = AdminPanel.w,
@@ -379,7 +380,7 @@ function MakeGameAdminPanel()
 			text = fontAwesome['fa-angle-double-right'],
 			sound = Game.Sounds.ButtonBackward,
 		}).onclick = function()
-			AdminPanel.substate = "Hidden"
+			AdminPanel:setSubstate( "Hidden" )
 			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
 			Tweens.Final.HideAdminPanel.active = true
 		end
@@ -392,7 +393,7 @@ function MakeGameAdminPanel()
 			font = ui.font(30, "FontAwesome"),
 			substate = "Hidden",
 		}).onclick = function()
-			AdminPanel.substate = "Main"
+			AdminPanel:setSubstate( "Main" )
 			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()/4
 			Tweens.Final.ShowAdminPanel.active = true
 		end
@@ -421,7 +422,7 @@ function MakeGameAdminPanel()
 			substate = "Quit",
 			sound = Game.Sounds.ButtonBackward,
 		}).onclick = function()
-			AdminPanel.substate = "Hidden"
+			AdminPanel:setSubstate( "Hidden" )
 			AdminPanel.x = love.graphics.getWidth()-HiddenSize
 			ui.state = "Menu"
 			Game.Objects = {}
@@ -436,7 +437,62 @@ function MakeGameAdminPanel()
 			text = "CANCEL",
 			substate = "Quit",
 		}).onclick = function()
-			AdminPanel.substate = "Main"
+			AdminPanel:setSubstate( "Main" )
+		end
+		
+		AdminPanel:add("button", {
+			w = AdminPanel.w,
+			background = hex2rgb("#424242"),
+			foreground = { 255, 255, 255 },
+			text = "Game Settings",
+			h = 75,
+			y = AdminPanel.h - 150,
+		}).onclick = function()
+			AdminPanel:setSubstate( "Settings" )
+			AdminPanel.background = hex2rgb("#424242")
+		end
+
+		--[=[ Settings ]=]--
+		local title = AdminPanel:add("panel", {
+			substate = "Settings",
+			background = hex2rgb("#212121"),
+			w = AdminPanel.w,
+			h = 55,
+		})
+		title:add("text", {
+			align = "center",
+			y = title.h/2 - ui.font(25, "Roboto-Bold"):getHeight()/2,
+			font = ui.font(25, "Roboto-Bold"),
+			text = "SETTINGS",
+			foreground = { 255, 255, 255 }
+		})
+		AdminPanel:add("radio", {
+			y = 100, 
+			foreground = { 255, 255, 255 },
+			label = "Mute",
+			align = "center",
+			substate = "Settings",
+			onchange = function(self)
+				if self.active then
+					love.audio.setVolume(0)
+				else
+					love.audio.setVolume(1)
+				end
+			end
+		})
+		AdminPanel:add("button", {
+			w = AdminPanel.w - 50,
+			x = 25,
+			h = 50,
+			background = { 255, 255, 255 },
+			foreground = hex2rgb("#424242"),
+			text = "CONFIRM CHANGES",
+			font = ui.font(24, "Roboto-Bold"),
+			substate = "Settings",
+			y = AdminPanel.h-75,
+		}).onclick = function()
+			AdminPanel:setSubstate("Main")
+			AdminPanel.background = { 255, 255, 255 }
 		end
 	else
 		AdminPanel = ui.new({w=PanelW, drawAboveObjects = true, h = love.graphics.getHeight(), x = love.graphics.getWidth()-HiddenSize, substate="Hidden"})
@@ -448,8 +504,9 @@ function MakeGameAdminPanel()
 			text = "Return to Menu",
 			h = 75,
 			y = AdminPanel.h - 75,
+			
 		}).onclick = function()
-			AdminPanel.substate = "Quit"
+			AdminPanel:setSubstate( "Quit" )
 		end
 		AdminPanel:add("button", {
 			w = 55,
@@ -460,7 +517,7 @@ function MakeGameAdminPanel()
 			text = fontAwesome['fa-times'],
 			sound = Game.Sounds.ButtonBackward,
 		}).onclick = function()
-			AdminPanel.substate = "Hidden"
+			AdminPanel:setSubstate( "Hidden" )
 			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()*0.075
 			Tweens.Final.HideAdminPanel.active = true
 		end
@@ -473,7 +530,7 @@ function MakeGameAdminPanel()
 			font = ui.font(30, "FontAwesome"),
 			substate = "Hidden",
 		}).onclick = function()
-			AdminPanel.substate = "Main"
+			AdminPanel:setSubstate( "Main" )
 			--AdminPanel.x = love.graphics.getWidth()-love.graphics.getWidth()/4
 			Tweens.Final.ShowAdminPanel.active = true
 		end
@@ -502,7 +559,7 @@ function MakeGameAdminPanel()
 			substate = "Quit",
 			sound = Game.Sounds.ButtonBackward,
 		}).onclick = function()
-			AdminPanel.substate = "Hidden"
+			AdminPanel:setSubstate( "Hidden" )
 			AdminPanel.x = love.graphics.getWidth()-HiddenSize
 			ui.state = "Menu"
 			Game.Objects = {}
@@ -517,7 +574,7 @@ function MakeGameAdminPanel()
 			text = "CANCEL",
 			substate = "Quit",
 		}).onclick = function()
-			AdminPanel.substate = "Main"
+			AdminPanel:setSubstate( "Main" )
 		end
 	end
 end

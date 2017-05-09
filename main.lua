@@ -228,7 +228,6 @@ function love.update( dt )
 end
 
 function love.draw()
-
 	ui.draw()
 	if SHOWCHARMS then
 		local x = 0

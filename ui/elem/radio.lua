@@ -123,16 +123,16 @@ function radio:mousereleased( x, y, button )
 				if self.group == "_ALL" then
 					self.active = not self.active
 					self.selected = false
-					if self.onchange then self.onchange() end
+					if self.onchange then self:onchange() end
 				else
 					for i, v in pairs( self.parent.children ) do
 						if v.type and v.type == "radio" and v.group == self.group and v ~= self then
 							v.active = false
-							if v.onchange then v.onchange() end
+							if v.onchange then v:onchange() end
 						end
 					end
 					self.active = true
-					if self.onchange then self.onchange() end
+					if self.onchange then self:onchange() end
 				end
 			end
 		end

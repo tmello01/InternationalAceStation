@@ -15,7 +15,11 @@ local panel = {
 	children = { },
 	visible = true,
 	substate = "Main",
+	_substate = "Main",
 	drawAboveObjects = false,
+	setSubstate = function(self, state)
+		self._substate = state
+	end,
 }
 panel.__index = panel
 
@@ -24,8 +28,9 @@ function panel:new(data, parent)
 	local self = setmetatable(data, panel)
 	self.state = data.state or "Main"
 	if parent then
-		table.insert(parent.children,self)
+	
 		self.parent = parent
+		table.insert(parent.children,self)
 	else
 		self.isroot = true
 		table.insert(ui.roots, self)

@@ -9,7 +9,7 @@ local textinput = {
 	placeholder = "A Text Input",
 	substate = "Main",
 	onHover = true,
-
+	placeholderColor = { 150, 150, 150 },
 	align = "left",
 	text = "",
 
@@ -28,6 +28,7 @@ local textinput = {
 			end
 			return false
 		end
+		return true
 	end,
 
 	maxlength = -1,
@@ -40,7 +41,7 @@ function textinput:new( data, parent )
 	self.parent = parent or error("Textinput needs a parent object")
 	self.state = data.state or parent.state
 	if not self.font then self.font = ui.font(26) end
-
+	self.h = self.font:getHeight() + 6
 	table.insert(parent.children, self)
 	return self
 end
@@ -73,12 +74,19 @@ function textinput:draw()
 			local twp = self.parent.w
 			x = math.ceil(ax + (twp/2)-self.w/2)
 		end		
+		local drawtx = x + 5
+		if self.font:getWidth(self.text) > self.w - self.font:getWidth("www") then
+			--Text is too wide--
+			local diff = self.font:getWidth(self.text) - self.w - - self.font:getWidth("www")
+			drawtx = x - diff
+		end
+
 		love.graphics.setColor( self.background )
 		love.graphics.rectangle("fill", x, ay, self.w, self.font:getHeight() + 6)
 		love.graphics.setLineWidth( self.borderweight )
 		love.graphics.rectangle("line", x, ay, self.w, self.font:getHeight() + 6)
 		if #self.text < 1 and not self.active then
-			love.graphics.setColor( 150, 150, 150 )
+			love.graphics.setColor( self.placeholderColor )
 			love.graphics.setFont( self.font )
 			love.graphics.print( self.placeholder, x + 5, ay + 3 )
 		else
@@ -88,7 +96,9 @@ function textinput:draw()
 			if self.active then
 				appendChar = "|"
 			end
-			love.graphics.print( self.text..appendChar, x + 5, ay + 3 )
+			love.graphics.setScissor( x, ay, self.w, self.h )
+			love.graphics.print( self.text..appendChar, drawtx, ay + 3 )
+			love.graphics.setScissor()
 		end
 	end
 end
@@ -104,22 +114,25 @@ function textinput:mousepressed( x, y, button )
 		if x >= ax and x <= ax + self.w and y >= ay and y <= ay + self.font:getHeight() + 6 then
 			self.active = true
 			love.keyboard.setTextInput(true)
+			love.keyboard.setKeyRepeat(true)
 		else
+			if self.active then
+				love.keyboard.setKeyRepeat(false)
+			end
 			self.active = false
-			love.keyboard.setTextInput(false)
 		end
 	end
 end
 
 function textinput:input(i)
 	if ui.checkState( self ) and self.active and (#self.text < self.maxlength or self.maxlength < 0) then
+	
+		print( self.placeholder )
 		if self:checkCharset(i) then
 			self.text = self.text .. i
 			if self.onchange then self.onchange() end
-			return true
 		end
 	end
-	return false
 end
 
 function textinput:keypressed(key)
@@ -132,7 +145,6 @@ function textinput:keypressed(key)
 			if self.onreturn then self.onreturn() end
 			love.keyboard.setTextInput( false )
 		end
-		return true
 	end
 end
 

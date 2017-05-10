@@ -1,6 +1,19 @@
 local values = {"a","2","3","4","5","6","7","8","9","10","j","q","k"}
 local suits = { "diamonds", "clubs", "hearts", "spades" }
 local chipColors = {"singleWhite", "singleRed", "singleBlue", "singleGrey", "singleGreen", "singleOrange", "singleBlack", "singlePink", "singlePurple", "singleYellow", "singleLightBlue"}
+local names = {
+	"John Glenn",
+	"Ed White",
+	"Yuri Gagarin",
+	"Neil Armstrong",
+	"Buzz Aldrin",
+	"Michael Collins",
+	"Alan Shepard",
+	"Valentina Tereshkova",
+	"Gus Grissom",
+	"Chris Hadfield",
+	"Andriyan Nikolayev"
+}
 local splashes = {
 	"Give me some space!",
 	"This game just launched!",
@@ -119,26 +132,42 @@ local function makeGameTypePanel()
 		w = 400,
 		align = "center",
 		background = { 255, 255, 255 },
-		y = GameSelection.h/2,
+		y = GameSelection.h/2 - 90,
 		substate = "JoinGame",
 		placeholder = "Host Address",
-		charset = "1234567890."
+		charset = "1234567890.",
+		font = ui.font(36, "Roboto-Light")
+	})
+	NameInput = GameSelection:add("textinput", {
+		w = 400,
+		align = "center",
+		background = { 255, 255, 255 },
+		y = GameSelection.h/2 - 150,
+		placeholder = "Display Name",
+		substate = "JoinGame",
+		font = ui.font(36, "Roboto-Light")
 	})
 	GameSelection:add("button", {
-		y = middle + 50,
+		y = middle - 20,
 		background = { 255, 255, 255 },
 		foreground = hex2rgb("#1976D2"),
 		text = "Connect!",
-		h = 50,
-		font = ui.font(20,"Roboto-Bold"),
+		h = 100,
+		font = ui.font(36,"Roboto-Bold"),
 		align = "center",
-		substate = "JoinGame"
+		substate = "JoinGame",
+		w = love.graphics.getWidth()/2
 	}).onclick = function()
 		--Attempt connection--
 		Game.InternalClient.Client = nil
 		Game.InternalClient.Client = socket.udp()
 		Game.InternalClient.Client:settimeout(1)
-		Game.InternalClient.Client:sendto(Game.PackMessage("Connect", {}), IPAddrInput.text, 22222)
+		Game.InternalClient.Client:settimeout(0.01)
+		local name = names[love.math.random(1,#names)]
+		if #NameInput.text > 0 then
+			name = NameInput.text
+		end
+		Game.InternalClient.Client:sendto(Game.PackMessage("Connect", {n = name}), IPAddrInput.text, 22222)
 		local data, ip, port = Game.InternalClient.Client:receivefrom()
 		if data then 
 			data = Game.UnpackMessage(data)
@@ -152,9 +181,10 @@ local function makeGameTypePanel()
 				local str = "IP: " .. Game.GetNetworkAddress()
 				if Game.ConnectMode == "Offline" then
 					str = "Offline"
+				elseif Game.ConnectMode == "Client" then
+					IPADDRESSLABEL.text = name
 				end
-				IPADDRESSLABEL.text = str
-
+				Game.Hand = {}
 				ui.state = "Main"
 				for i, v in ipairs( data.c ) do
 					if v.t == "c" then
@@ -300,6 +330,7 @@ local function makeGameTypePanel()
 			Game.LoadTemplate("Solitaire", true)
 		end
 		ui.state = "Main"
+		Game.Hand = {}
 		local str = "IP: " .. Game.GetNetworkAddress()
 		if Game.ConnectMode == "Offline" then
 			str = "Offline"
@@ -391,6 +422,28 @@ function MakeGameAdminPanel()
 			font = ui.font(36, "FontAwesome"),
 			text = fontAwesome['fa-gear'],
 		})
+		local bottomrow = AdminPanel:add("button", {
+			w = AdminPanel.w/2,
+			h = math.ceil(AdminPanel.w/2),
+			y = 100 + math.ceil((AdminPanel.w/2)*2),
+			foreground = { 42, 42, 42 },
+			background = hex2rgb("#eeeeee"),
+			font = ui.font(36, "FontAwesome"),
+			text = fontAwesome['fa-comment-o'],
+		})
+		bottomrow.onclick = function()
+			SHOWADMINPANEL.clickable = false
+			CANMAKETOUCH = false
+			ChatPanel:setSubstate("Main")
+			ChatPanel.visible = true
+			if AdminPanel._substate ~= "Hidden" then
+				AdminPanel:setSubstate( "Hidden" )
+				Tweens.Final.HideAdminPanel.active = true
+			end
+		end
+
+
+
 		AdminPanel:add("button", {
 			w = 55,
 			h = 100,
@@ -460,14 +513,15 @@ function MakeGameAdminPanel()
 		}).onclick = function()
 			AdminPanel:setSubstate( "Main" )
 		end
-		
+		local _y = math.floor(bottomrow.y + bottomrow.h)
+		local _h = AdminPanel.h - _y - 75
 		AdminPanel:add("button", {
 			w = AdminPanel.w,
 			background = hex2rgb("#424242"),
 			foreground = { 255, 255, 255 },
 			text = "Game Settings",
-			h = 75,
-			y = AdminPanel.h - 150,
+			h = _h,
+			y = _y,
 		}).onclick = function()
 			AdminPanel:setSubstate( "Settings" )
 			AdminPanel.background = hex2rgb("#424242")
@@ -1021,7 +1075,84 @@ function makeAddPanel()
 
 end
 
+local function makeChatPanel()
+	
+	ChatPanel = ui.new( {
+		w = love.graphics.getWidth()/2,
+		h = 250,
+		background = { 255, 255, 255 },
+		substate = "Hidden",
+		state = "Main",
+		drawAboveObjects = true,
+		visible = false,
+		x = love.graphics.getWidth()/4,
+		y = love.graphics.getHeight()/6,
+		background = { 255, 255, 255 },
+	})
+	local _w = ChatPanel.w - 20
+	local _h = ChatPanel.h - 20
+	local top = ChatPanel:add("panel", {
+		w = _w,
+		h = 140,
+		x = 10,
+		y = 10,
+		background = hex2rgb("#2196f3"),
+	})
+	local chatinput = top:add("textinput", {
+		align = "center",
+		background = hex2rgb("#2196f3"),
+		foreground = { 255, 255, 255 },
+		placeholder = "Enter chat message...",
+		placeholderColor = { 255, 255, 255 },
+		w = _w - 50,
+	})
+	chatinput.y = top.h/2 - chatinput.h/2
+
+	--Send
+	local s = ChatPanel:add("button", {
+		x = 110,
+		h = 90,
+		w = _w - 100,
+		background = hex2rgb("#4caf50"),
+		font = ui.font( 35, "FontAwesome" ),
+		text = fontAwesome["fa-paper-plane-o"],
+		y = 150
+	})
+	s.onclick = function()
+
+		
+		--Game.SendChat(chatinput.text)
+		print(chatinput.text)
+		chatinput.text = ""
+		ChatPanel:setSubstate("Hidden")
+		ChatPanel.visible = false
+		SHOWADMINPANEL.clickable = true
+		CANMAKETOUCH = true
+
+	end
+
+
+	--Cancel
+	ChatPanel:add("button", {
+		y = 150,
+		w = 100,
+		x = 10,
+		h = 90,
+		background = hex2rgb("#f44336"),
+		font = ui.font( 35, "FontAwesome" ),
+		text = fontAwesome["fa-times"],
+	}).onclick = function()
+		chatinput.text = ""
+		ChatPanel:setSubstate("Hidden")
+		ChatPanel.visible = false
+		SHOWADMINPANEL.clickable = true
+		CANMAKETOUCH = true
+	end
+
+end
+
 function makeMenus()
+	makeChatPanel()
 	makeAddPanel()
 	makeMainMenu()
 	makeGameTypePanel()

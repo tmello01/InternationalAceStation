@@ -24,6 +24,7 @@ SHOWCHARMS = false
 SHOWDECKCHARMS = false
 
 Game = {
+	Hand = {},
 	IsAdmin = function()
 		return Game.ConnectMode == "Offline" or Game.ConnectMode == "Host"
 	end,	
@@ -36,7 +37,7 @@ Game = {
 		]]--
 		return sock:getsockname()
 	end,
-	InitializeCard = function(suit, value, x, y, flipped, tweentox, tweentoy, deckgroup, nid)
+	InitializeCard = function( suit, value, x, y, flipped, tweentox, tweentoy, deckgroup, nid )
 		if Game.IsAdmin() then
 			local nid = nid or Game.GenerateNetworkID()
 			
@@ -128,6 +129,18 @@ Game = {
 		if Game.InternalServer.Server then
 			for i, v in pairs( Game.InternalServer.Clients ) do
 				Game.InternalServer.Server:sendto( Game.PackMessage( head, contents ), v.ip, v.port )
+			end
+		end
+	end,
+	UpdateClientList = function()
+		Game.SendToClients("PULSE", {})
+	end,
+	OrderHand = function()
+		for i, nid in pairs( Game.Hand ) do
+			for k, v in pairs( Game.Objects ) do
+				if v.networkID == nid then
+					v:topDrawOrder()
+				end
 			end
 		end
 	end,

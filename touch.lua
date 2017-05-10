@@ -52,7 +52,6 @@ end
 
 function t:new( id, x, y )
 	local canstart = x <= AdminPanel.x
-	print("CANSTART: " .. tostring(canstart))
 	if CANMAKETOUCH and canstart then
 		
 		local data = {id=id,x=x,y=y}

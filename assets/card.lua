@@ -203,6 +203,9 @@ local card = {
 				f = self.flipped,
 			})
 		end
+		if self.inhand then
+			Game.OrderHand()
+		end
 		return
 	end,
 
@@ -238,6 +241,14 @@ local card = {
 		end
 		return
 	end,
+	removeSilent = function( self, o )
+		for i, v in pairs( Game.Objects ) do
+			if v == self then
+				table.remove( Game.Objects, i )
+			end
+		end
+		return
+	end,
 
 	--[[
 		this:drag( x, y )
@@ -265,7 +276,7 @@ local card = {
 		end
 
 		if self.x < love.graphics.getWidth()/4 then
-			if not SHOWCHARMS then
+			if not SHOWCHARMS and not SHOWHAND then
 				SHOWCHARMS = true
 				SHOWDECKCHARMS = false
 				Tweens.Final.HideCharmsPanel.t:reset()
@@ -278,6 +289,7 @@ local card = {
 			Tweens.Final.ShowCharmsPanel.active = false
 			Tweens.Final.HideCharmsPanel.active = true
 		end
+		
 		if self.selected then
 			--[[for i, v in pairs( Game.Objects ) do
 				if v ~= self and v.selected then
@@ -309,6 +321,24 @@ local card = {
 	]]--
 	update = function( self, dt )
 		if self.visible then
+			if self.dragged then
+				if self.x >= love.graphics.getWidth()/4 and self.x <= love.graphics.getWidth() * .75 and self.y >= love.graphics.getHeight() * .85 then
+					if not SHOWHAND and not SHOWCHARMS then
+						SHOWHAND = true
+						SHOWHANDY:to(love.graphics.getHeight()-150)
+					end
+				else
+					if SHOWHAND then
+						SHOWHANDY:to(love.graphics.getHeight()-15)
+					end
+					SHOWHAND = false
+				end
+			else
+				if SHOWHAND then
+					SHOWHANDY:to(love.graphics.getHeight()-15)
+				end
+				SHOWHAND = false
+			end
 			if self.touched and not self.dragged then
 				if self.tapTimer:update( dt ) then
 					self.held = true
@@ -409,6 +439,40 @@ local card = {
 					self:remove()
 					
 					SHOWCHARMS = false
+				end
+			end
+			if SHOWHAND then
+				if self.x >= love.graphics.getWidth()/4 and self.x <= love.graphics.getWidth() *.75 then
+					if (Game.IsAdmin()) then
+						Game.SendToClients("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
+					else
+						Game.SendToHost("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
+					end
+					self.inhand = true
+					if (self.inhand) then
+						for i, v in pairs( Game.Hand ) do
+							if v == self.networkID then
+								table.remove(Game.Hand, i)
+							end
+						end
+					end
+					table.insert( Game.Hand, self.networkID )
+				end
+				SHOWHANDY:to(love.graphics.getHeight()-15)
+				SHOWHAND = false
+			end
+			if self.inhand and self.y < love.graphics.getHeight()*.85 then
+				self.inhand = false
+				for i, v in pairs(Game.Hand) do
+					if v == self.networkID then
+						if (Game.IsAdmin()) then
+							Game.SendToClients("TAKEOUTHAND", {o = Game.UniqueNetworkID, n = self.networkID, x = self.x, y = self.y, s = self.suit, v = self.value, f = self.flipped})
+						else
+							Game.SendToHost("TAKEOUTHAND", {o = Game.UniqueNetworkID, n = self.networkID, x = self.x, y = self.y, s = self.suit, v = self.value, f = self.flipped})
+						end
+						table.remove( Game.Hand, i )
+						return
+					end
 				end
 			end
 			self.dragged = false

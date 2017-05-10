@@ -36,9 +36,9 @@ Game = {
 		]]--
 		return sock:getsockname()
 	end,
-	InitializeCard = function(suit, value, x, y, flipped, tweentox, tweentoy, deckgroup)
+	InitializeCard = function(suit, value, x, y, flipped, tweentox, tweentoy, deckgroup, nid)
 		if Game.IsAdmin() then
-			local nid = Game.GenerateNetworkID()
+			local nid = nid or Game.GenerateNetworkID()
 			
 			local tweento = (tweentox ~= nil or tweentoy ~= nil)
 			card:new({suit = suit, value = value, x = x, y = y, deckgroup = deckgroup, flipped = flipped, networkID = nid, tweentox = tweentox, tweentoy = tweentoy, tweento = tweento}):topDrawOrder()
@@ -77,6 +77,7 @@ Game = {
 				c = cards,
 				t = tweentox or nil,
 				ty = tweentoy or nil,
+				d = deckgroup
 			})
 		else
 			Game.SendToHost("NewDeck", {
@@ -84,7 +85,8 @@ Game = {
 				y = y,
 				c = cards,
 				t = tweentox or nil,
-				ty = tweentoy or nil
+				ty = tweentoy or nil,
+				d = deckgroup
 			})
 		end
 	end,

@@ -51,7 +51,10 @@ local function isOnObject(id,x,y,skipUpdate)
 end
 
 function t:new( id, x, y )
-	if CANMAKETOUCH then
+	local canstart = x <= AdminPanel.x
+	print("CANSTART: " .. tostring(canstart))
+	if CANMAKETOUCH and canstart then
+		
 		local data = {id=id,x=x,y=y}
 		local self = setmetatable(data,t)
 		self.pastDeadzone = false
@@ -144,7 +147,7 @@ function t:endTouch(x, y)
 			})
 		else
 			Game.SendToHost("STARTSELECT", {
-				o = Game.UniqueNetworkID
+				o = Game.UniqueNetworkID,
 				c = Game.Selection
 			})
 		end

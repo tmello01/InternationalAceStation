@@ -200,8 +200,6 @@ function love.update( dt )
 						v.selected = false
 					end
 				end
-			end
-
 			elseif data.h == "SHUFFLE" then
 				for i, v in pairs( Game.Objects ) do
 					if v.networkID == data.c.n then

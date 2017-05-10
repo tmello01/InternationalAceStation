@@ -79,15 +79,16 @@ local deck = {
 					flipped = v.flipped,
 				})
 			end
-			print(table.serialize( cards ) )
 			for i, v in pairs( cardsToStack ) do
 				v:remove()
 			end
-			Game.InitializeDeck(self.x, self.y, cards)
+			local xx, yy = self.x, self.y
 			local sound = love.math.random(1,4)
 			Game.Sounds.CardPlace[sound]:stop()
 			Game.Sounds.CardPlace[sound]:play()
 			self:remove()
+			
+			Game.InitializeDeck(xx, yy, cards)
 			return
 		end
 	end,

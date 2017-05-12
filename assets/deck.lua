@@ -151,6 +151,7 @@ local deck = {
 			self.startdy = self.y
 		end
 		self.dragged = true
+		SHOWDECKCHARMS = not self.selected
 		self.x = x-self.dragx
 		self.y = y-self.dragy
 		if Game.IsAdmin() then
@@ -162,14 +163,12 @@ local deck = {
 			if not SHOWCHARMS then
 				SHOWCHARMS = true
 				SHOWDECKCHARMS = not self.selected
-				Tweens.Final.HideCharmsPanel.t:reset()
-				Tweens.Final.ShowCharmsPanel.active = true
-				Tweens.Final.HideCharmsPanel.active = false
 			end
+			
+			SHOWCHARMSX:to(0)
 		else
 
-			Tweens.Final.ShowCharmsPanel.active = false
-			Tweens.Final.HideCharmsPanel.active = true
+			SHOWCHARMSX:to(-75)
 		end
 		if self.selected then
 			for i, v in pairs( Game.Selection ) do
@@ -199,6 +198,9 @@ local deck = {
 				end
 			end
 			if self.tweento then
+				if not self.tweentotween then
+					self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
+				end
 				if self.tweentotween:update( dt ) then
 					self.tweento = false
 				end
@@ -249,8 +251,7 @@ local deck = {
 			end
 			local w = 75
 			if self.dragged then
-				Tweens.Final.ShowCharmsPanel.active = false
-				Tweens.Final.HideCharmsPanel.active = true
+				SHOWCHARMSX:to(-75)
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
 					if self.selected then
 						for i, v in pairs( Game.Selection ) do
@@ -271,7 +272,8 @@ local deck = {
 						self.tweenback = true
 					
 					else
-						Game.SendToHost("SHUFFLE", {n = self.networkID, x = self.startdx, y = self.startdy})
+						Game.SendToHost("SHUFFLE", {c = self.cards, n = self.networkID, x = self.startdx, y = self.startdy})
+						
 					end
 				elseif (not self.selected) and self.x + self.w >= 0 and self.x <= w and self.y + self.h >= love.graphics.getHeight()-115 and self.y <= love.graphics.getHeight() -15 then
 					Game.Sounds.CardSlide[love.math.random(5,8)]:play()

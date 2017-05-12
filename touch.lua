@@ -62,6 +62,17 @@ function t:new( id, x, y )
 			self.startx = x
 			self.starty = y
 			self.selecting = true
+			if Game.IsAdmin() then
+				selections[Game.UniqueNetworkID] = {
+					x1 = x,
+					y1 = y,
+					x2 = x,
+					y2 = y,
+				}
+				Game.SendToClients("STARTSELECT", {x = x, y = y, o = Game.UniqueNetworkID})
+			else
+				Game.SendToClients("STARTSELECT", {x = x, y = y, o = Game.UniqueNetworkID})
+			end
 			for i, v in pairs( Game.Objects ) do
 				if v.selected then v.selected = false end
 			end
@@ -93,6 +104,19 @@ function t:updatePosition( x, y )
 				end
 			end
 		else	
+			if self.selecting then
+				if Game.IsAdmin() then
+					selections[Game.UniqueNetworkID] = {
+						x1 = self.startx,
+						y1 = self.starty,
+						x2 = self.x,
+						y2 = self.y,
+					}
+					Game.SendToClients("MOVESELECT", { sx = self.startx, sy = self.starty, x = self.x, y = self.y,o = Game.UniqueNetworkID } )
+				else
+					Game.SendToHost("MOVESELECT", { sx = self.startx, sy = self.starty, x = self.x, y = self.y,o = Game.UniqueNetworkID } )
+				end
+			end
 			self.x = x or self.x
 			self.y = y or self.y
 			self.canselect = true
@@ -139,16 +163,14 @@ function t:endTouch(x, y)
 				end
 			end
 		end
-		if Game.IsAdmin() then
-			Game.SendToClients("STARTSELECT", {
-				o = Game.UniqueNetworkID,
-				c = Game.Selection,
-			})
-		else
-			Game.SendToHost("STARTSELECT", {
-				o = Game.UniqueNetworkID,
-				c = Game.Selection
-			})
+		if (self.selecting) then
+			if Game.IsAdmin() then
+				selections[Game.UniqueNetworkID] = nil
+				Game.SendToClients("ENDSELECT", {o = Game.UniqueNetworkID, c = Game.Selection})
+			else
+				selections[Game.UniqueNetworkID] = nil
+				Game.SendToHost("ENDSELECT", {o = Game.UniqueNetworkID, c = Game.Selection})
+			end
 		end
 	else
 		Game.Selection = {}

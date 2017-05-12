@@ -120,15 +120,13 @@ local cardTemplate = {
 			if not SHOWCHARMS then
 				SHOWCHARMS = true
 				SHOWDECKCHARMS = false
-				Tweens.Final.HideCharmsPanel.t:reset()
-				Tweens.Final.ShowCharmsPanel.active = true
-				Tweens.Final.HideCharmsPanel.active = false
 			end
+			
+			SHOWCHARMSX:to(0)
 		else
 			SHOWDECKCHARMS = false
 
-			Tweens.Final.ShowCharmsPanel.active = false
-			Tweens.Final.HideCharmsPanel.active = true
+			SHOWCHARMSX:to(-75)
 		end
 	end,
 	update = function( self, dt )
@@ -181,8 +179,7 @@ local cardTemplate = {
 			end
 			local w = 75
 
-			Tweens.Final.ShowCharmsPanel.active = false
-			Tweens.Final.HideCharmsPanel.active = true
+			SHOWCHARMSX:to(-75)
 			if self.dragged then
 
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then

@@ -104,15 +104,12 @@ local chip {
 			if not SHOWCHARMS then
 				SHOWCHARMS = true
 				SHOWDECKCHARMS = false
-				Tweens.Final.HideCharmsPanel.t:reset()
-				Tweens.Final.ShowCharmsPanel.active = true
-				Tweens.Final.HideCharmsPanel.active = false
+				SHOWCHARMSX:to(0)
 			end
 		else
 			SHOWDECKCHARMS = false
 
-			Tweens.Final.ShowCharmsPanel.active = false
-			Tweens.Final.HideCharmsPanel.active = true
+			SHOWCHARMSX:to(-75)
 		end
 		if self.selected then
 			for i, v in pairs( Game.Objects ) do
@@ -177,8 +174,7 @@ local chip {
 			end
 			local w = 75
 
-			Tweens.Final.ShowCharmsPanel.active = false
-			Tweens.Final.HideCharmsPanel.active = true
+			SHOWCHARMSX:to(-75)
 			if self.dragged then
 
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then

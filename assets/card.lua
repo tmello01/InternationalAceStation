@@ -101,7 +101,7 @@ local card = {
 	type = "card",
 	tapTimer = timer.new(0.5),
 	networkID = "",
-
+	netSelected = false,
 
 
 
@@ -265,42 +265,31 @@ local card = {
 			Game.Sounds.CardSlide[sound]:play()
 
 		end
+		SHOWDECKCHARMS = false
 		self.dragged = true
 		self.x = x-self.dragx
 		self.y = y-self.dragy
 		
 		if Game.IsAdmin() then
-			Game.SendToClients("MOVE", {n = self.networkID, x = self.x, y = self.y})
+			Game.SendToClients("MOVE", {o = Game.UniqueNetworkID, n = self.networkID, x = self.x, y = self.y})
 		else
-			Game.SendToHost("MOVE", {n = self.networkID, x = self.x, y = self.y})
+			Game.SendToHost("MOVE", {o = Game.UniqueNetworkID, n = self.networkID, x = self.x, y = self.y})
 		end
 
-		if self.x < love.graphics.getWidth()/4 then
+		if self.x < 200 then
 			if not SHOWCHARMS and not SHOWHAND then
 				SHOWCHARMS = true
 				SHOWDECKCHARMS = false
-				Tweens.Final.HideCharmsPanel.t:reset()
-				Tweens.Final.ShowCharmsPanel.active = true
-				Tweens.Final.HideCharmsPanel.active = false
 			end
+			
+			SHOWCHARMSX:to(0)
 		else
 			SHOWDECKCHARMS = false
 
-			Tweens.Final.ShowCharmsPanel.active = false
-			Tweens.Final.HideCharmsPanel.active = true
+			SHOWCHARMSX:to(-75)
 		end
 		
 		if self.selected then
-			--[[for i, v in pairs( Game.Objects ) do
-				if v ~= self and v.selected then
-					if not v.dragged then
-						v.dragged = true
-					else
-						v.x = x-v.dragx
-						v.y = y-v.dragy
-					end
-				end
-			end--]]
 			for i, v in pairs( Game.Selection ) do
 				for k, z in pairs( Game.Objects ) do
 					if z.networkID == v then
@@ -322,8 +311,8 @@ local card = {
 	update = function( self, dt )
 		if self.visible then
 			if self.dragged then
-				if self.x >= love.graphics.getWidth()/4 and self.x <= love.graphics.getWidth() * .75 and self.y >= love.graphics.getHeight() * .85 then
-					if not SHOWHAND and not SHOWCHARMS then
+				if self.x >= love.graphics.getWidth()/4 and self.x <= love.graphics.getWidth() * .75 and self.y >= love.graphics.getHeight() -150 then
+					if not SHOWHAND then
 						SHOWHAND = true
 						SHOWHANDY:to(love.graphics.getHeight()-150)
 					end
@@ -334,10 +323,12 @@ local card = {
 					SHOWHAND = false
 				end
 			else
-				if SHOWHAND then
-					SHOWHANDY:to(love.graphics.getHeight()-15)
+				if not self.selected then
+					if SHOWHAND then
+						SHOWHANDY:to(love.graphics.getHeight()-15)
+					end
+					SHOWHAND = false
 				end
-				SHOWHAND = false
 			end
 			if self.touched and not self.dragged then
 				if self.tapTimer:update( dt ) then
@@ -352,7 +343,6 @@ local card = {
 				end
 			end
 		end
-		return
 	end,
 
 	--[[
@@ -370,6 +360,13 @@ local card = {
 			if self.selected then
 				love.graphics.setLineWidth(3)
 				love.graphics.setColor( 0, 255, 0 )
+				love.graphics.rectangle("line", self.x, self.y, self.w*2, self.h*2 )
+				love.graphics.setColor( 255, 255, 255 )
+				love.graphics.setLineWidth(1)
+			end
+			if self.netSelected then
+				love.graphics.setLineWidth(3)
+				love.graphics.setColor( 0, 255, 255 )
 				love.graphics.rectangle("line", self.x, self.y, self.w*2, self.h*2 )
 				love.graphics.setColor( 255, 255, 255 )
 				love.graphics.setLineWidth(1)
@@ -410,6 +407,24 @@ local card = {
 			self:topDrawOrder()
 		end
 	end,
+	putInHand = function( self )
+		if (Game.IsAdmin()) then
+			Game.SendToClients("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
+		else
+			Game.SendToHost("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
+		end
+		self.inhand = true
+		if (self.inhand) then
+			for i, v in pairs( Game.Hand ) do
+				if v == self.networkID then
+					table.remove(Game.Hand, i)
+				end
+			end
+		end
+		
+		table.insert( Game.Hand, self.networkID )
+		self:topDrawOrder()
+	end,
 	endTouch = function( self, id )
 
 		if self.touched then
@@ -422,8 +437,6 @@ local card = {
 			end
 			local w = 75
 
-			Tweens.Final.ShowCharmsPanel.active = false
-			Tweens.Final.HideCharmsPanel.active = true
 			if self.dragged then
 				
 				if self.x + self.w >= 0 and self.x <= w and self.y + self.h >= 0 and self.y <= w then
@@ -438,25 +451,29 @@ local card = {
 					end
 					self:remove()
 					
-					SHOWCHARMS = false
 				end
 			end
+			
+			SHOWCHARMSX:to(-75)
 			if SHOWHAND then
 				if self.x >= love.graphics.getWidth()/4 and self.x <= love.graphics.getWidth() *.75 then
-					if (Game.IsAdmin()) then
-						Game.SendToClients("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
-					else
-						Game.SendToHost("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
-					end
-					self.inhand = true
-					if (self.inhand) then
-						for i, v in pairs( Game.Hand ) do
-							if v == self.networkID then
-								table.remove(Game.Hand, i)
+				
+					self:putInHand()
+					if self.selected and #Game.Selection > 1 then
+						for i, v in pairs( Game.Selection ) do
+							for k, z in pairs( Game.Objects ) do
+								if z.networkID == v then
+									if z.type == "card" then
+										z:putInHand()
+									else
+										z.tweentox = z.startdx
+										z.tweentoy = z.startdy
+										z.tweento = true
+									end
+								end
 							end
 						end
 					end
-					table.insert( Game.Hand, self.networkID )
 				end
 				SHOWHANDY:to(love.graphics.getHeight()-15)
 				SHOWHAND = false
@@ -475,9 +492,13 @@ local card = {
 					end
 				end
 			end
-			self.dragged = false
-			self.held = false
-			self.touched = false
+			for i, v in pairs( Game.Selection ) do
+				for k, z in pairs( Game.Objects ) do
+					if z.networkID == v then
+						z:topDrawOrder()
+					end
+				end
+			end
 			for i, v in pairs( Game.Objects ) do
 				v.dragged = false
 				v.selected = false
@@ -488,6 +509,13 @@ local card = {
 			love.graphics.clear()
 			love.graphics.setCanvas()
 			Game.Selection = {}
+			if self.selected then 
+				self:topDrawOrder()
+			end
+			self.dragged = false
+			self.held = false
+			self.touched = false
+			self.selected = false
 		end
 	end,
 	cancelTouchManager = function( self, id )

@@ -33,11 +33,29 @@ local colors = {
 	"#2196f3","#e91e63","#f44336","#4caf50","#ff9800","#ff5722","#009688","#ffeb3b",
 }
 
+
+local function shuffleTable( t )
+    local rand = math.random 
+    assert( t, "shuffleTable() expected a table, got nil" )
+    local iterations = #t
+    local j
+    
+    for i = iterations, 2, -1 do
+        j = rand(i)
+        t[i], t[j] = t[j], t[i]
+    end
+end
+
 CANMAKETOUCH = true
 
 SHOWHAND = false
 --hehe, show handy. it's supposed to be show hand y, but oh well
 SHOWHANDY = soft:new(love.graphics.getHeight() - 15)
+SHOWCHARMSX = soft:new(-75)
+SHOWCHARMSX:setSpeed(0.1)
+
+selections = {} --For storing location of selections
+selectionCards = {} --For storing contents of selections
 
 require "ser"
 tween = require "tween"
@@ -189,7 +207,34 @@ function love.update( dt )
 			elseif data.h == "STACK" then
 				Game.InitializeDeck(data.c.x, data.c.y, data.c.c)
 			elseif data.h == "PULSE" then
-
+			elseif data.h == "STARTSELECT" then
+				selections[data.c.o] = {
+					x1 = data.c.x,
+					y1 = data.c.y,
+					x2 = data.c.x,
+					y2 = data.c.y,
+				}
+				Game.SendToClients("STARTSELECT", data.c)
+			elseif data.h == "MOVESELECT" then
+				selections[data.c.o] = {
+					x1 = data.c.sx,
+					y1 = data.c.sy,
+					x2 = data.c.x,
+					y2 = data.c.y
+				}
+				Game.SendToClients("STARTSELECT", data.c)
+			elseif data.h == "SHUFFLE" then
+				for i, v in pairs( Game.Objects ) do
+					if v.networkID == data.c.n then
+						v.cards = data.c.c
+						v.gotostart = tween.new(0.3, v, {x = data.c.x, y = data.c.y}, "inOutExpo")
+						v.tweenback = true
+					end
+					Game.SendToClients( "SHUFFLE", data.c )
+				end
+			elseif data.h == "ENDSELECT" then
+				selections[data.c.o] = nil
+				Game.SendToClients("ENDSELECT", data.c)
 			end
 		end
 	elseif Game.ConnectMode == "Client" then
@@ -243,23 +288,34 @@ function love.update( dt )
 					networkID = data.c.n
 				}):topDrawOrder()
 			elseif data.h == "STARTSELECT" then
-				local allowDrag = (data.c.o == Game.UniqueNetworkID)
-				for i, v in pairs( data.c.c ) do
-					for k, z in pairs( Game.Objects ) do
-						if z.networkId == v then
-							z.selected = true
-							z.owner = data.c.o
-							z.highlightColor = data.c.p
-						end
-					end
-				end
-
+				selections[data.c.o] = {
+					x1 = data.c.x,
+					y1 = data.c.y,
+					x2 = data.c.x,
+					y2 = data.c.y,
+				}
 			elseif data.h == "MOVESELECT" then
-
+				selections[data.c.o] = {
+					x1 = data.c.sx,
+					y1 = data.c.sy,
+					x2 = data.c.x,
+					y2 = data.c.y
+				}
 			elseif data.h == "ENDSELECT" then
-				for i, v in pairs( Game.Objects ) do
-					if v.networkID == data.c.n and v.owner == data.c.o then
-						v.selected = false
+				selections[data.c.o] = nil
+				print( #data.c.c, data.c.o )
+				if #data.c.c > 0 and data.c.o ~= Game.UniqueNetworkID then
+					for i, v in pairs( data.c.c ) do
+						for k, z in pairs( Game.Objects ) do
+							if z.networkID == v then
+								z.netSelected = true
+								z.owner = data.c.o
+								z.dragx = z.x
+								z.dragy = z.y
+								selectionCards[data.c.o] = selectionCards[data.c.o] or {}
+								table.insert( selectionCards[data.c.o], z.networkID )
+							end
+						end
 					end
 				end
 			elseif data.h == "SHUFFLE" then
@@ -316,12 +372,7 @@ end
 function love.draw()
 	ui.draw()
 	if SHOWCHARMS then
-		local x = 0
-		if Tweens.Final.ShowCharmsPanel.active then
-			x = Tweens.Data.ShowCharmsPanel.x
-		elseif Tweens.Final.HideCharmsPanel.active then
-			x = Tweens.Data.HideCharmsPanel.x
-		end
+		local x = SHOWCHARMSX:get()
 		love.graphics.setColor(42, 42, 42)
 		love.graphics.rectangle("fill", x, 0, 75, love.graphics.getHeight())
 		love.graphics.setColor(255, 255, 255)
@@ -333,7 +384,7 @@ function love.draw()
 		end
 	end
 	
-	if ui.state == "Main" and CANMAKETOUCH then
+	if ui.state == "Main" then
 		love.graphics.setColor( 42, 42, 42 )
 		love.graphics.rectangle("fill", love.graphics.getWidth() / 4, SHOWHANDY:get(), love.graphics.getWidth()/2, 150)
 		love.graphics.setColor( 255, 255, 255 )
@@ -357,6 +408,17 @@ function love.draw()
 	end
 
 	touch.draw()
+	for i, v in pairs( selections ) do
+		if i ~= Game.UniqueNetworkID then
+			local x1 = math.min(v.x1, v.x2)
+			local x2 = math.max(v.x1, v.x2)
+			local y1 = math.min(v.y1, v.y2)
+			local y2 = math.max(v.y1, v.y2)
+			love.graphics.setColor( 0, 0, 0 )
+			love.graphics.rectangle("line", x1, y1, x2-x1, y2-y1)
+			love.graphics.setColor( 255, 255, 255 )
+		end
+	end
 	ui.drawAbove()
 	love.graphics.setFont(Game.Font)
 end

@@ -311,7 +311,7 @@ local card = {
 	update = function( self, dt )
 		if self.visible then
 			if self.dragged then
-				if self.x >= love.graphics.getWidth()/4 and self.x <= love.graphics.getWidth() * .75 and self.y >= love.graphics.getHeight() -150 then
+				if self.x >= love.graphics.getWidth()/4 and self.x <= love.graphics.getWidth() * .75 and self.y >= love.graphics.getHeight() - (love.graphics.getHeight() * (150 / love.graphics.getHeight())) then
 					if not SHOWHAND then
 						SHOWHAND = true
 						SHOWHANDY:to(love.graphics.getHeight()-150)

@@ -377,7 +377,6 @@ function deck:new( data )
 		self.tweento = true
 		self.tweentotween = tween.new(0.2, self, {x = self.tweentox, y = self.tweentoy}, "inOutExpo")
 	end
-	print( self.tweentox, self.x )
 	table.insert( Game.Objects, self )
 	return self
 end

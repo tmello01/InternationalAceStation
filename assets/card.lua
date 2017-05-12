@@ -408,21 +408,24 @@ local card = {
 		end
 	end,
 	putInHand = function( self )
-		if (Game.IsAdmin()) then
-			Game.SendToClients("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
-		else
-			Game.SendToHost("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
-		end
-		self.inhand = true
-		if (self.inhand) then
-			for i, v in pairs( Game.Hand ) do
-				if v == self.networkID then
-					table.remove(Game.Hand, i)
+		if #Game.Hand < 13 then
+			if (Game.IsAdmin()) then
+				Game.SendToClients("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
+			else
+				Game.SendToHost("PUTINHAND", {o = Game.UniqueNetworkID, n = self.networkID})
+			end
+			self.inhand = true
+			if (self.inhand) then
+				for i, v in pairs( Game.Hand ) do
+					if v == self.networkID then
+						table.remove(Game.Hand, i)
+					end
 				end
 			end
-		end
+			
 		
-		table.insert( Game.Hand, self.networkID )
+			table.insert( Game.Hand, self.networkID )
+		end
 		self:topDrawOrder()
 	end,
 	endTouch = function( self, id )

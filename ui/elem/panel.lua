@@ -101,11 +101,7 @@ function panel:textinput( text )
 	if ui.checkState( self ) then
 		for i, v in pairs( self.children ) do
 			if v ~= self then
-				if v.input then 
-					if v:input(text) then
-						return true
-					end
-				end
+				if v.input then v:input( text ) end
 			end
 		end
 	end

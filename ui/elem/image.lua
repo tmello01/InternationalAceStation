@@ -43,8 +43,12 @@ function image:draw( )
 		if self.onHover then
 
 		end
+		local x = self.x
+		if self.align == "center" then
+			x = self.parent.w/2 - ui.image(self.path):getWidth()/2
+		end
 		love.graphics.setColor( self.shader )
-		love.graphics.draw( ui.image(self.path), self.x, self.y, 0, self.scalex, self.scaley )
+		love.graphics.draw( ui.image(self.path), x, self.y, 0, self.scalex, self.scaley )
 	end
 end
 

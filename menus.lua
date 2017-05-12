@@ -264,7 +264,7 @@ local function makeGameTypePanel()
 		foreground = { 255, 255, 255 },
 		foregroundinactive = hex2rgb("#64B5F6"),
 		y = 135,
-		label = "Solitaire",
+		label = "Klondike",
 		substate = "HostGame",
 	})
 
@@ -327,6 +327,7 @@ local function makeGameTypePanel()
 			Game.InternalServer.Server = 0
 		end
 		if selection == Solitaire then
+			Game.RunningTemplate = "Solitaire",
 			Game.LoadTemplate("Solitaire", true)
 		end
 		ui.state = "Main"
@@ -441,6 +442,25 @@ function MakeGameAdminPanel()
 				Tweens.Final.HideAdminPanel.active = true
 			end
 		end
+		AdminPanel:add("button", {
+			w = AdminPanel.w/2,
+			h = AdminPanel.w/2,
+			x = AdminPanel.w/2,
+			y = 100 + math.ceil((AdminPanel.w/2)*2),
+			background = hex2rgb("#ab47bc"),
+			font = ui.font(36, "FontAwesome"),
+			text = fontAwesome['fa-refresh'],
+			onclick = function()
+				SHOWADMINPANEL.clickable = false
+				CANMAKETOUCH = false
+				ResetPanel:setSubstate("Main")
+				ResetPanel.visible = true
+				if AdminPanel._substate ~= "Hidden" then
+					AdminPanel:setSubstate( "Hidden" )
+					Tweens.Final.HideAdminPanel.active = true
+				end
+			end
+		})
 
 
 
@@ -1148,6 +1168,78 @@ local function makeChatPanel()
 		SHOWADMINPANEL.clickable = true
 		CANMAKETOUCH = true
 	end
+
+
+
+	--Just throw in the cancel panel because why not
+	ResetPanel = ui.new({
+		w = love.graphics.getWidth()/2,
+		h = love.graphics.getHeight()/3,
+		background = { 255, 255, 255 },
+		substate = "Hidden",
+		state = "Main",
+		drawAboveObjects = true,
+		visible = false,
+		x = love.graphics.getWidth()/4,
+		y = love.graphics.getHeight()/4,
+		background = { 255, 255, 255 },
+	})
+	ResetPanel:add("text", {
+		text = "Are you sure you want to reset the board? There is no undoing this action.",
+		align = "center",
+		y = 25,
+		font = ui.font(24, "Roboto-Light")
+	})
+	ResetPanel:add("button", {
+		text = "Yes.",
+		w = ResetPanel.w/2 - 75,
+		y = 100,
+		h = 100,
+		font = ui.font(24, "Roboto-Bold"),
+		x = 35,
+		onclick = function()
+			if Game.RunningTemplate then
+				for i, v in pairs( Game.Objects ) do
+					if Game.IsAdmin() then
+						Game.SendToClients("REMOVE", {n = v.networkID})
+					else
+						Game.SendToHost("REMOVE", {n = v.networkID})
+					end
+					v:remove()
+				end
+				Game.Objects = {}
+				Game.LoadTemplate(Game.RunningTemplate, true)
+			else
+				for i, v in pairs( Game.Objects ) do
+					if Game.IsAdmin() then
+						Game.SendToClients("REMOVE", {n = v.networkID})
+					else
+						Game.SendToHost("REMOVE", {n = v.networkID})
+					end
+					v:remove()
+				end
+				Game.Objects = {}
+			end
+			ResetPanel:setSubstate("Hidden")
+			ResetPanel.visible = false
+			SHOWADMINPANEL.clickable = true
+			CANMAKETOUCH = true
+		end,
+	})
+	ResetPanel:add("button", {
+		text = "No.",
+		w = ResetPanel.w/2 - 75,
+		y = 100,
+		h = 100,
+		font = ui.font(24, "Roboto-Bold"),
+		x = ResetPanel.w/2 + 25,
+		onclick = function()
+			ResetPanel:setSubstate("Hidden")
+			ResetPanel.visible = false
+			SHOWADMINPANEL.clickable = true
+			CANMAKETOUCH = true
+		end,
+	})
 
 end
 

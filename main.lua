@@ -241,8 +241,6 @@ function love.update( dt )
 
 		local data, ip, port = Game.InternalClient.Client:receivefrom()
 		if data then
-		
-			print( data )
 			data = Game.UnpackMessage( data )
 			if data.h == "NewCard" then
 				for i, v in pairs( Game.Objects ) do
@@ -303,7 +301,7 @@ function love.update( dt )
 				}
 			elseif data.h == "ENDSELECT" then
 				selections[data.c.o] = nil
-				print( #data.c.c, data.c.o )
+				
 				if #data.c.c > 0 and data.c.o ~= Game.UniqueNetworkID then
 					for i, v in pairs( data.c.c ) do
 						for k, z in pairs( Game.Objects ) do
@@ -316,6 +314,11 @@ function love.update( dt )
 								table.insert( selectionCards[data.c.o], z.networkID )
 							end
 						end
+					end
+				else
+					for i, v in pairs( Game.Objects ) do
+						v.netSelected = false
+						v.owner = ""
 					end
 				end
 			elseif data.h == "SHUFFLE" then
@@ -423,7 +426,6 @@ function love.draw()
 	love.graphics.setFont(Game.Font)
 end
 
---don't judge
 function love.textinput( t )
    ui.textinput( t )
 end

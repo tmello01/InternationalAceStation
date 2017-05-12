@@ -163,14 +163,16 @@ function t:endTouch(x, y)
 				end
 			end
 		end
-		if (self.selecting) then
-			if Game.IsAdmin() then
-				selections[Game.UniqueNetworkID] = nil
-				Game.SendToClients("ENDSELECT", {o = Game.UniqueNetworkID, c = Game.Selection})
-			else
-				selections[Game.UniqueNetworkID] = nil
-				Game.SendToHost("ENDSELECT", {o = Game.UniqueNetworkID, c = Game.Selection})
-			end
+		local data = Game.Selection
+		if not self.selecting then
+			data = {}
+		end
+		if Game.IsAdmin() then
+			selections[Game.UniqueNetworkID] = nil
+			Game.SendToClients("ENDSELECT", {o = Game.UniqueNetworkID, c = data})
+		else
+			selections[Game.UniqueNetworkID] = nil
+			Game.SendToHost("ENDSELECT", {o = Game.UniqueNetworkID, c = data})
 		end
 	else
 		Game.Selection = {}

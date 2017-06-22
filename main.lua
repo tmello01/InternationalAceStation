@@ -16,7 +16,7 @@
 	  ____) | || (_| | |_| | (_) | | | |                             
 	 |_____/ \__\__,_|\__|_|\___/|_| |_|                             
                                        
-	---------
+	----------------------------------------------------------------
 
 	Special thanks to Simon Rahnasto for all his help. :)
 
@@ -73,16 +73,21 @@ deckgroupTemplate = require "assets/deckgroup"
 utf8 = require "utf8"
 local Windows = love.system.getOS() == "Windows"
 
+debugger = require "debugger" ()
+
 love.graphics.setBackgroundColor( hex2rgb("#2E7D32") )
 
 
 function love.load()
 	
+	debugger.allowFunctionIndex(true)
 	makeMenus()
 
 end
 
 function love.update( dt )
+
+	debugger.update(dt)
 	soft:update( dt )
 	ui.update( dt )
 	if Windows then
@@ -369,7 +374,6 @@ function love.update( dt )
 			end
 		end
 	end
-
 end
 
 function love.draw()
@@ -424,6 +428,7 @@ function love.draw()
 	end
 	ui.drawAbove()
 	love.graphics.setFont(Game.Font)
+	debugger.draw()
 end
 
 function love.textinput( t )
